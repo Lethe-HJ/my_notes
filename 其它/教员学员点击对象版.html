@@ -1,0 +1,101 @@
+<html>
+
+<body>
+
+    <h1>我的第一个标题</h1>
+    <div>数组:<p id="list"></p>
+    </div>
+    <div id="teacher" name="role"
+        style="border: 2 px black; background-color: grey;width:200px;height:200px;float:left;margin:20px" on="false">教员
+    </div>
+    <div id="student" name="role"
+        style="border: 2 px black; background-color: grey;width:200px;height:200px;float:left;margin:20px" on="false">学员
+    </div>
+
+
+</body>
+<script>
+    Array.prototype.indexOf = function (val) {
+        for (let i = 0; i < this.length; i++) {
+            if (this[i] == val) return i;
+        }
+        return -1;
+    };
+
+
+    Array.prototype.remove = function (val) {
+        var index = this.indexOf(val);
+        if (index > -1) this.splice(index, 1);
+    };
+
+
+    class ChangeRole {
+
+        constructor(role, list) {
+            this.role = role;
+            this.list = list;
+        }
+
+        teacher = (on) => {
+            if (on) {
+                this.role[0].setAttribute("on", "true");//打开老师
+                this.role[0].style.backgroundColor = "green";
+                this.list.push("teacher");
+            } else {
+                this.role[0].setAttribute("on", "false");//关闭老师
+                this.role[0].style.backgroundColor = "grey";
+                this.list.remove("teacher");
+            }
+        }
+
+        student = (on) => {
+            if (on) {
+                this.role[1].setAttribute("on", "true");//打开学生
+                this.role[1].style.backgroundColor = "green";
+                this.list.push("student");
+            } else {
+                this.role[1].setAttribute("on", "false");//关闭学生
+                this.role[1].style.backgroundColor = "grey";
+                this.list.remove("student");
+            }
+        }
+
+        change = (element) => {
+            return () => {
+                if (element.getAttribute("id") == "teacher") {//如果是老师
+                    if (element.getAttribute("on") == "true") {//如果是开启状态
+                        this.teacher(false);//关闭老师
+                    }
+                    else {//如果是关闭状态
+                        this.teacher(true);//打开老师
+                        this.student(false);//关闭学生
+                    }
+                }
+                else {//如果是学生
+                    if (element.getAttribute("on") == "true") {//如果是开启状态
+                        this.student(false);//关闭学生
+                    }
+                    else {//如果是关闭状态
+                        this.student(true);//打开学生
+                        this.teacher(false);//关闭老师
+                    }
+                }
+                document.getElementById("list").innerText = list.toString();
+            }
+        }
+    }
+
+
+    const list = [];
+    const role = document.getElementsByName("role");
+    const change_role = new ChangeRole(role, list);
+    let change = change_role.change;
+    role.forEach((item) => {
+        item.addEventListener('click', change(item));
+    })
+
+</script>
+
+
+
+</html>
