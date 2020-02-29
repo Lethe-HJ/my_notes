@@ -94,6 +94,8 @@ docker stats MywordPress 查看容器所占用的系统资源
 docker exec 容器名 容器内执行的命令 容器执行命令
 docker exec -it 容器名 /bin/bash 登入容器的bash
 
+docker cp cranky_elion:/home/hujin/20-02-28 /home/hujin 从容器中拷贝文件到宿主机
+
 docker run的参数
 --restart=always 容器的自动启动
 -h x.xx.xx 设置容器主机名
