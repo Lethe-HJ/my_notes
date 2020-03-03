@@ -90,6 +90,8 @@ int main()
 `./hello.o`
 输出Hello, World!说明c文件没问题
 
+> gcc命令时需要添上 -c选项，用来保证得到的.o文件可重链接，不然基本会make报错
+
 ### 打包
 
 `cd ..`
@@ -256,12 +258,14 @@ rm -rf $RPM_BUILD_ROOT
 然后复制hello-0.3为hello-0.3.1 进入hello-0.3.1 修改c文件的部分内容
 然后执行
 `diff -uNr hello-0.3 hello-0.3.1 > hello-0.3.1.patch`
--u 以 统一格式创建补丁文件，这种格式比缺省格式更紧凑些。 -N 确保补丁文件将正确地处理已经创建或删除文件的情况。 -r 比较命令行上所给出的两个目录的所有子目录中的所有文件。 
+> -u 以 统一格式创建补丁文件，这种格式比缺省格式更紧凑些。 -N 确保补丁文件将正确地处理已经创建或删除文件的情况。 -r 比较命令行上所给出的两个目录的所有子目录中的所有文件。
+
 生成patch文件复制到~/rapmbuild/SOURCES
 复制~/rpmbuild/SPEC/hello-0.3.spec 为 hello-0.3.1.spec
 修改hello-0.3.1.spec
 在文件开头的字段声明部分的末尾加上`Patch:  %{name}-%{version}.patch`
 在%prep部分的末尾加上`%patch -p1`
+> 在 %prep 部分中的 %patch -p1 行是一个 RPM 宏， 它将在您系统的构建目录中运行补丁程序，其中把第一个补丁文件作为输入。 需要将 -p1 传递给补丁程序，告诉它从补丁文件中的路径中剥去一层目录,RPM 将在该目录内运行该补丁文
 然后再执行`rpmbuild -ba hello-0.3.1.spec`
 成功后`rpm -qpl ../SRPMS/hello-0.3-1.src.rpm`
 显示
@@ -269,19 +273,6 @@ hello-0.3.1.patch.spec
 hello-0.3.patch
 hello-0.3.tar.gz
 说明补丁已经被打进来了
-
-## 在安装过程中使用脚本
-可以使用%pre,%post,%preun,%postun段落来定义安装前后，卸载前后的脚本动作
-```shell
-%pre
-echo This is pre for %{version}-%{release}: arg=$1
-%post
-echo This is post for %{version}-%{release}: arg=$1
-%preun
-echo This is preun for %{version}-%{release}: arg=$1
-%postun
-echo This is postun for %{version}-%{release}: arg=$1
-```
 
 
 ## 不作为 root 用户来构建RPM包
@@ -295,6 +286,189 @@ echo This is postun for %{version}-%{release}: arg=$1
 %_topdir /home/your_userid/rpm
 
 这个文件会告诉 RPM：它先前在 `~/rpmbuild/` 下查找的所有目录应该改为在 `/home/hujin/rpm` 下查找
+
+
+## 通过示例学习
+
+与安装二进制 RPM 包类似，可以使用 rpm -i filename.rpm 安装源 RPM 包。 安装完之后，.spec 文件将在您的 %_specdir 目录中，源文件和补丁文件将在您的 %_sourcedir 目录中
+
+尝试用 rpm -ba foo.spec 构建这些 .spec 文件
+
+多数情况下，构建在某个 Linux 分发版上的 RPM 不能应用到另一个 Linux 分发版。 更不要说应用到同一个分发版的另一个版本上，原因有很多，包括基本内核版本、库版本和目录结构方面的差异
+
+如果 .spec 文件在带有源码的 tar 压缩包（.tar.gz 文件）中，那么用户只需运行：
+	
+`rpm -tb foo.tar.gz`
+
+并构建该包的二进制 RPM ― 甚至无需解压该 tar 文件!
+
+如果无法使 .spec 文件包含在软件中，则可以分发一个源 RPM 包。 有了这，用户就可以运行：
+	
+`rpm --rebuild foo.src.rpm`
+
+并在他们的系统上构建二进制 RPM。
+
+
+## 安装和卸载脚本
+
+可以使用%pre,%post,%preun,%postun段落来定义安装前后，卸载前后的脚本动作
+
+在某种情况下您希望安装过程失败。一种好的技术是使用 %pre 脚本来检查安装前提条件，它们比 RPM 可以直接支持的更复杂。 如果不符合前提条件，那么脚本以非零状态退出，而且 RPM 不会继续安装。
+
+
+## 升级
+
+RPM 如何执行升级：
++ 运行新包的 %pre
++ 安装新文件
++ 运行新包的 %post
++ 运行旧包的 %preun
++ 删除新文件未覆盖的所有旧文件
++ 运行旧包的 %postun
+
+脚本有一种方法可以告之是否正在安装、删除或升级包。每个脚本都被传递单一命令行参数 ― 一个数字。 这应该告诉脚本 在当前包完成安装或卸载之后将安装多少个包的副本。
+
+这里是在安装期间传递的实际值：
+
+    运行新包的 %pre (1)
+    安装新文件
+    运行新包的 %post (1)
+
+这里是在升级期间传递的值：
+
+    运行新包的 %pre (2)
+    安装新文件
+    运行新包的 %post (2)
+    运行旧包的 %preun (1)
+    删除新文件未覆盖的任何旧文件
+    运行旧包的 %postun (1)
+
+这里是在删除期间传递的值：
+
+    运行旧包的 %preun (0)
+    删除文件
+    运行旧包的 %postun (0)
+
+一个示例：
+
+```shell
+Summary: GNU indent
+Name: indent
+Version: 2.2.6
+        Release: 5
+         
+Source0: %{name}-%{version}.tar.gz
+License: GPL
+Group: Development/Tools
+BuildRoot: %{_builddir}/%{name}-root
+%description
+The GNU indent program reformats C code to any of a variety of
+formatting standards, or you can define your own.
+%prep
+%setup -q
+%build
+./configure
+make
+%install
+rm -rf $RPM_BUILD_ROOT
+make DESTDIR=$RPM_BUILD_ROOT install
+%post
+        if [ "$1" = "1" ] ; then  # first install
+         
+ if [ -x /sbin/install-info ]; then
+   /sbin/install-info /usr/local/info/indent.info /usr/local/info/dir
+ fi
+        fi
+         
+%preun
+        if [ "$1" = "0" ] ; then # last uninstall
+         
+ if [ -x /sbin/install-info ]; then
+   /sbin/install-info --delete /usr/local/info/indent.info /usr/local/info/dir
+ fi
+        fi
+         
+%clean
+rm -rf $RPM_BUILD_ROOT
+%files
+%defattr(-,root,root)
+/usr/local/bin/indent
+%doc /usr/local/info/indent.info
+%doc %attr(0444,root,root) /usr/local/man/man1/indent.1
+%doc COPYING AUTHORS README NEWS
+
+```
+
+## 在安装或卸载其它包时运行脚本
+
+触发器示例
+
+```shell
+%triggerin -- emacs
+# Insert code here to run if your package is already installed,
+# then emacs is installed,
+# OR if emacs is already installed, then your package is installed
+%triggerin -- xemacs
+# Insert code here to run if your package is already installed,
+# then xemacs is installed,
+# OR if xemacs is already installed, then your package is installed
+%triggerun -- emacs
+# insert code here to run if your package is already installed,
+# then emacs is uninstalled
+%triggerun -- xemacs
+# insert code here to run if your package is already installed,
+# then xemacs is uninstalled
+%postun
+# Insert code here to run if your package is uninstalled
+```
+触发器脚本被传递了 两个参数。第一个参数是当触发器脚本完成运行时将安装的 您的包的实例数。第二个参数是当触发器脚本完成运行时将安装的 要触发的包的实例数。 
+
+RPM 升级期间脚本执行和文件安装及卸载的顺序
+
+```shell
+new-%pre  for new version of package being installed
+ ...       (all new files are installed)
+ new-%post for new version of package being installed
+ any-%triggerin (%triggerin from other packages set off by new install)
+ new-%triggerin
+ old-%triggerun
+ any-%triggerun (%triggerun from other packages set off by old uninstall)
+ old-%preun    for old version of package being removed
+ ...       (all old files are removed)
+ old-%postun   for old version of package being removed
+ old-%triggerpostun
+ any-%triggerpostun (%triggerpostun from other packages set off by old un
+       install)
+```
+
+
+## 高级脚本编制
+
+### 备用解释器
+
+通常，所有安装时脚本和触发器脚本都是使用 /bin/sh shell 程序运行的，不过也可以通过将 -p interpreter 添加到脚本行来告诉 RPM 应该使用另一种解释器运行您的脚本
+```shell
+%post -p /usr/bin/perl
+# Perl script here
+%triggerun -p /usr/bin/perl -- xemacs
+# Another Perl script here
+```
+
+### RPM 变量
+RPM 在将 RPM 变量存储到 RPM 包文件之前先在您的脚本中扩充它们
+
+```shell
+...
+%define foo_dir /usr/lib/foo
+...
+%install
+cp install.time.message $RPM_BUILD_ROOT/%{foo_dir}
+%files
+%{foo_dir}/install.time.message
+%post
+/bin/cat %{foo_dir}/install.time.message
+```
+
 ## 相关链接
 
 [IBM Developer用RPM打包软件](https://www.ibm.com/developerworks/cn/linux/management/package/rpm/part1/index.html)
