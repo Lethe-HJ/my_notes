@@ -5,7 +5,7 @@
 
 ## 头
 
-```shell
+```s
 %{!?upstream_version: %global upstream_version %{version}%{?milestone}}
 #global是用来定义一些全局变量，变量的反问语法是%{!},如果是%{?}，则表示变量如果有定义才取值
 %global sname novaclient
@@ -39,7 +39,7 @@ BuildRequires:  openstack-macros
 
 ## 描述
 
-```shell
+```s
 #这是默认包即python-novaclient包的描述
 %description
 %{common_desc}
@@ -239,6 +239,30 @@ ln -s ./nova-%{python3_version} %{buildroot}%{_bindir}/nova-3
 rm -fr %{buildroot}%{python3_sitelib}/novaclient/tests
 %endif
 cp /var/tmp/rpm-tmp* ~/rpmbuild/SPECS
+
+%py2_install
+# 这里执行类似安装python包到虚拟根
+
+mv %{buildroot}%{_bindir}/nova %{buildroot}%{_bindir}/nova-%{python2_version}
+ln -s ./nova-%{python2_version} %{buildroot}%{_bindir}/nova-2
+
+ln -s ./nova-2 %{buildroot}%{_bindir}/nova
+
+mkdir -p %{buildroot}%{_sysconfdir}/bash_completion.d
+install -pm 644 tools/nova.bash_completion \
+    %{buildroot}%{_sysconfdir}/bash_completion.d/nova
+
+# Delete tests
+rm -fr %{buildroot}%{python2_sitelib}/novaclient/tests
+
+%{__python2} setup.py build_sphinx -b html
+%{__python2} setup.py build_sphinx -b man
+
+install -p -D -m 644 doc/build/man/nova.1 %{buildroot}%{_mandir}/man1/nova.1
+
+# Fix hidden-file-or-dir warnings
+rm -fr doc/build/html/.doctrees doc/build/html/.buildinfo
+
 ```
 
 rpm-tmp*
@@ -300,29 +324,9 @@ cp /var/tmp/rpm-tmp* ~/rpmbuild/SPECS
     /usr/lib/rpm/redhat/brp-java-repack-jars
 ```
 
+## file部分
 
 ```shell
-%py2_install
-mv %{buildroot}%{_bindir}/nova %{buildroot}%{_bindir}/nova-%{python2_version}
-ln -s ./nova-%{python2_version} %{buildroot}%{_bindir}/nova-2
-
-ln -s ./nova-2 %{buildroot}%{_bindir}/nova
-
-mkdir -p %{buildroot}%{_sysconfdir}/bash_completion.d
-install -pm 644 tools/nova.bash_completion \
-    %{buildroot}%{_sysconfdir}/bash_completion.d/nova
-
-# Delete tests
-rm -fr %{buildroot}%{python2_sitelib}/novaclient/tests
-
-%{__python2} setup.py build_sphinx -b html
-%{__python2} setup.py build_sphinx -b man
-
-install -p -D -m 644 doc/build/man/nova.1 %{buildroot}%{_mandir}/man1/nova.1
-
-# Fix hidden-file-or-dir warnings
-rm -fr doc/build/html/.doctrees doc/build/html/.buildinfo
-
 %files -n python2-%{sname}
 %license LICENSE
 %doc README.rst
