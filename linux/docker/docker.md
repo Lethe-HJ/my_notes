@@ -137,7 +137,7 @@ DockerFile
 Dockfile 是一种被 Docker 程序解释的脚本,Dockerfile 由一条一条的指令组成,每条指令对应 Linux 下面
 的一条命令。Docker 程序将这些 Dockerfile 指令翻译真正的 Linux 命令。Dockerfile 有自己书写格式和支持的命令,
 Docker 程序解决这些命令间的依赖关系,类似于 Makefile。Docker 程序将读取 Dockerfile,根据指令生成定制的 image
-生成命令:docker
+生成命令:`docker build -t 镜像名:版本号`
 打开 DockerFile 说明
 build -t wangyang/jdk-tomcat .
 
@@ -151,6 +151,8 @@ docker rmi -f $(docker immages -q)
 删除所有镜像
 
 ## Dockerfile 语法
+
+```shell
 1、FROM（指定基础 image）：
 构建指令，必须指定且需要在Dockerfile其他指令的前面。后续的指令都依赖于该指令指定的image。FROM指令指定的基础image可以是官方远程仓库中的，也可以位于本地仓库
 
@@ -252,6 +254,8 @@ example：
 example：	
 	ONBUILD ADD . /app/src
 	ONBUILD RUN /usr/local/bin/python-build --dir /app/src
+```
+
 
 ###　镜像的导出以及导入
 导出：docker save -o  xx.xx.xx  xx.xx.xx.tar
