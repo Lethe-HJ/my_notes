@@ -172,4 +172,52 @@ Base-image can be specified by argument --base-image. For example:
 
 The Dockerfile customisation mechanism is also useful for adding/installing plugins to services. An example of this is Neutron’s third party L2 drivers.
 
+The bottom of each Dockerfile contains two blocks, image_name_footer, and footer. The image_name_footer is intended for image specific modifications, while the footer can be used to apply a common set of modifications to every Dockerfile.
+
+For example, to add the networking-cisco plugin to the neutron_server image, one may want to add the following to the template-override file:
+
+```shell
+{% extends parent_template %}
+
+{% block neutron_server_footer %}
+RUN git clone https://git.openstack.org/openstack/networking-cisco \
+    && pip --no-cache-dir install networking-cisco
+{% endblock %}
+```
+
+Astute readers may notice there is one problem with this however. Assuming nothing else in the Dockerfile changes for a period of time, the above RUN statement will be cached by Docker, meaning new commits added to the Git repository may be missed on subsequent builds. To solve this the Kolla build tool also supports cloning additional repositories at build time, which will be automatically made available to the build, within an archive named plugins-archive.
+
+The following is available for source build types only.
+
+To use this, add a section to /etc/kolla/kolla-build.conf in the following format:
+
+`[<image>-plugin-<plugin-name>]`
+
+Where <image> is the image that the plugin should be installed into, and <plugin-name> is the chosen plugin identifier.
+
+Continuing with the above example, add the following to /etc/kolla/kolla-build.conf:
+
+```shell
+[neutron-server-plugin-networking-cisco]
+type = git
+location = https://git.openstack.org/openstack/networking-cisco
+reference = master
+```
+
+The build will clone the repository, resulting in the following archive structure:
+
+plugins-archive.tar
+|__ plugins
+    |__networking-cisco
+
+The template now becomes:
+
+```shell
+{% block neutron_server_footer %}
+ADD plugins-archive /
+pip --no-cache-dir install /plugins/*
+{% endblock %}
+```
+
+Many of the Dockerfiles already copy the plugins-archive to the image and install available plugins at build time.
 
