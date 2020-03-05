@@ -74,3 +74,4 @@ index-url = http://pypi.douban.com/simple/
 `su stack`
 `cd /home/devstack`
 `FORCE=yes ./stack.sh`
+

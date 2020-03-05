@@ -277,3 +277,14 @@ example：
 		--insecure-registry 10.10.10.11:5000    增加
 	
 	curl -XGET http://10.10.10.11:5000/v2/_catalog    查看已有镜像
+
+
+`ip addr show docker0`
+4: docker0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default 
+    link/ether 02:42:bc:a7:7d:f1 brd ff:ff:ff:ff:ff:ff
+    inet 172.17.0.1/16 brd 172.17.255.255 scope global docker0
+       valid_lft forever preferred_lft forever
+    inet6 fe80::42:bcff:fea7:7df1/64 scope link 
+       valid_lft forever preferred_lft forever
+
+`netstat -anp | more`

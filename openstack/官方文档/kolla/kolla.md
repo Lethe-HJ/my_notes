@@ -221,3 +221,79 @@ pip --no-cache-dir install /plugins/*
 
 Many of the Dockerfiles already copy the plugins-archive to the image and install available plugins at build time.
 
+## Additions Functionality
+
+The Dockerfile customisation mechanism is also useful for adding/installing additions into images. An example of this is adding your jenkins job build metadata (say formatted into a jenkins.json file) into the image.
+
+Similarly to the plugins mechanism, the Kolla build tool also supports cloning additional repositories at build time, which will be automatically made available to the build, within an archive named additions-archive. The main difference between plugins-archive and additions-archive is that plugins-archive is copied to the relevant images and processed to install available plugins while additions-archive processing is left to the Kolla user.
+
+The following is available for source build types only.
+
+To use this, add a section to /etc/kolla/kolla-build.conf in the following format:
+
+[<image>-additions-<additions-name>]
+
+Where <image> is the image that the plugin should be installed into, and <additions-name> is the chosen additions identifier.
+
+Continuing with the above example, add the following to /etc/kolla/kolla-build.conf file:
+
+```shell
+[neutron-server-additions-jenkins]
+type = local
+location = /path/to/your/jenkins/data
+```
+
+The build will copy the directory, resulting in the following archive structure:
+
+additions-archive.tar
+|__ additions
+    |__jenkins
+
+Alternatively, it is also possible to create an additions-archive.tar file yourself without passing by /etc/kolla/kolla-build.conf in order to use the feature for binary build type.
+
+The template now becomes:
+
+```shell
+{% block neutron_server_footer %}
+ADD additions-archive /
+RUN cp /additions/jenkins/jenkins.json /jenkins.json
+{% endblock %}
+```
+
+## Custom Repos
+
+### Red Hat
+
+The build method allows the operator to build containers from custom repos. The repos are accepted as a list of comma separated values and can be in the form of .repo, .rpm, or a url. See examples below.
+
+Update rpm_setup_config in /etc/kolla/kolla-build.conf:
+
+`rpm_setup_config = https://trunk.rdoproject.org/centos7/currrent/delorean.repo,https://trunk.rdoproject.org/centos7/delorean-deps.repo`
+
+If specifying a .repo file, each .repo file will need to exist in the same directory as the base Dockerfile (kolla/docker/base):
+
+`rpm_setup_config = epel.repo,delorean.repo,delorean-deps.repo`
+
+
+### Ubuntu
+
+For Debian based images, additional apt sources may be added to the build as follows:
+
+`apt_sources_list = custom.list`
+
+The opendaylight-template-overrides.j2 template override shows how to build an OpenDaylight container image with a different version than the one packaged with the distro.
+Building OpenDaylight Container Images¶
+kolla-build.conf¶
+
+Point to the desired version of OpenDaylight in kolla-build.conf:
+
+```shell
+[opendaylight]
+type = url
+location = https://nexus.opendaylight.org/content/repositories/opendaylight.release/org/opendaylight/integration/distribution-karaf/0.6.2-Carbon/distribution-karaf-0.6.2-Carbon.tar.gz
+```
+
+Build the container by executing the following command:
+
+`kolla-build --type source --template-override contrib/template-override/opendaylight-template-overrides.j2 opendaylight`
+
