@@ -288,3 +288,32 @@ example：
        valid_lft forever preferred_lft forever
 
 `netstat -anp | more`
+
+## 构建私有仓库
+
+`docker run -d -v /ope/registry:/var/lib/registry -p 5000:5000 --restart=always registry`
+--restart=always 总是开机自启
+
+默认走443端口,这里改成了5000,仓库服务端和客户端都需要说明一下
+
+`vim /etc/docker/daemon.json`
+
+	{
+		"insecure-registry": ["仓库ip:5000"]
+	}
+
+`systemctl restart docker`
+
+上传镜像
+
+仓库地址/userName/imageName:tagName:tag0
+
+这里我们上传tomcat:v1.0这个镜像
+`docker tag tomcat:v1.0 仓库ip:5000/tomcat:v1.0`
+然后
+`docker push 仓库ip:5000/tomcat:v1.0`
+
+通过 `curl -XGET http://仓库ip:5000/v2/_catalog`即可查看上传的镜像
+
+客户端下载镜像命令
+``docker pull 仓库ip:5000/tomcat:v1.0`
