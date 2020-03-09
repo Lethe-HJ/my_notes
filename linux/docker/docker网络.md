@@ -26,349 +26,66 @@ namespace
 ![](2020-03-08-14-56-09.png)
 
 
-## docker
+##　Docker 网络模式修改Docker 进程网络修改
 
-
-
-
-2.3.1 容器技术 - Docker
-讲师:汪洋目录
-1
-容器是什么1
-容器是什么容器 - 1容器 - 2Docker 由来
-Docker 诞生
-1、Docker 是 dotcloud 公司开源的一款产品 dotcloud 是 2010 年新成立的一家公司,
-主要基于 PAAS ( Platfrom as a Service ) 平台为开发者提供服务
-2、2013 年 10 月 dotcloud 公司改名为 Docker 股份有限公司Docker 历程
-1、Linux Container
-是一种内核虚拟化技术,可以提供轻量级的虚拟化,以便隔离进程
-和资源
-2、Docker
-是
-PAAS
-提供商 dotCloud
-开源的一个基于 LXC 的高级容器引擎,源代
-码托管在 Github 上, 基于 go 语言并遵从 Apache2.0 协议开源
-3、Docker 设想是交付运行环境如同海运,OS 如同一个货轮,每一个在 OS 基础上的软
-件都如同一个集装箱,用户可以通过标准化手段自由组装运行环境,同时集装箱的内容可
-以由用户自定义,也可以由专业人员制造Docker 与 传统虚拟化 对比Docker 的构成
-1、Docker 仓库:https://hub.docker.com
-2、Docker 自身组件
-> Docker Client:Docker 的客户端
-> Docker Server:Docker daemon 的主要组成部分,接受用户通过 Docker Client
-发出的请求,并按照相应的路由规则实现路由分发
-> Docker 镜像:Docker 镜像运行之后变成容器(docker run)Docker 组件间的协同方式
-官方仓库
-2、搜索镜像
-3、下载镜像
-4、启动应用
-app2
-app1
-docker pull xx
-docker run xx
-docker stop xx
-1、发送启动指令
-5、返回结果
-Docker Daemon
-操作系统:Ubuntu/Centos
-硬件:宿主机Docker化应用存在的方式 - 1
-应用B
-应用A
-运行的应用 运行的应用
-软件包配置文件 软件包配置文件
-依赖库和第三方软件 依赖库和第三方软件
-操作系统 操作系统Docker化应用存在的方式 - 2
-应用B
-应用A
-运行的应用 运行的应用
-软件包配置文件 软件包配置文件
-依赖库和第三方软件 依赖库和第三方软件
-操作系统Docker化应用存在的方式 - 3
-应用A
-应用B
-运行的应用 运行的应用
-空白层 空白层
-软件包配置文件 软件包配置文件
-依赖库和第三方软件
-操作系统
-共享
-依赖库和第三方软件Docker化应用存在的方式 - 4
-应用 A 的镜像
-应用 A 的容器
-运行的应用
-空白层
-软件包配置文件
-依赖库和第三方软件
-操作系统Docker化应用存在的方式 - 5
-第四层 3M 文件 A- C+
-第三层 50M 第三层 50M
-第二层 200M 第二层 200M
-第一层 1G 第一层 1GO v e r返回
-
-
-
-
-
-
-
-
-2.3.2 Docker 安装
-讲师:汪洋目录
-1
-2
-3
-Docker 安装
-Docker 加速配置
-Docker 化应用体验1
-Docker 安装安装分类
-Install for Linux
-> Script
-> Yum
-> RpmScript Install
-yum update
-$ curl -sSL https://get.docker.com/ | sh
-systemctl start docker
-systemctl enable docker
-docker run hello-worldYum Install
-yum update
-cat >/etc/yum.repos.d/docker.repo <<-EOF
-[dockerrepo]
-name=Docker Repository
-baseurl=https://yum.dockerproject.org/repo/main/centos/7
-enabled=1
-gpgcheck=1
-gpgkey=https://yum.dockerproject.org/gpg EOF
-yum install dockerRpm Install
-https://download.docker.com/linux/centos/7/x86_64/stable/Packages/2
-Docker 加速配置镜像加速
-cp /lib/systemd/system/docker.service /etc/systemd/system/docker.service
-chmod 777 /etc/systemd/system/docker.service
-vim
-/etc/systemd/system/docker.service
-ExecStart=/usr/bin/dockerd-current --registry-
-mirror=https://kfp63jaj.mirror.aliyuncs.com \
-systemctl daemon-reload
-systemctl restart
-ps
--ef
-|
-docker
-grep docker
-阿里云Docker官网:https://dev.aliyun.com/search.html
-镜像加速3
-Docker 化应用体验Wordpress 博客系统
-WordPress 运行环境需要如下软件的支持:
-➢ PHP 5.6 或更新软件
-➢ MySQL 5.6 或 更新版本
-➢ Apache 和 mod_rewrite 模块
-docker run --name db --env MYSQL_ROOT_PASSWORD=example -d mariadb
-docker run --name MyWordPress --link db:mysql -p 8080:80 -d wordpress
-WordPress - 个人博客系统O v e r
-
-
-
-2.3.3 容器管理
-讲师:汪洋目录
-1
-2
-Docker 基础概念及命令
-Docker-Compose1
-Docker 基础概念及命令Docker 基础概念
-Docker 基础概念
-Docker 三个重要概念:仓库 (Repository)、镜像 (image) 和 容器 (Container)
-docker run --name MyWordPress --link db:mysql -p 8080:80 -d wordpress
-Docker 指令的基本用法:
-docker + 命令关键字(COMMAND) + 一系列的参数Docker 基础命令
-Docker 基础命令
-docker info 守护进程的系统资源设置
-docker search Docker 仓库的查询
-docker pull Docker 仓库的下载
-docker images Docker 镜像的查询
-docker rmi Docker
-docker ps 容器的查询
-docker run 容器的创建启动
-docker start/stop 容器启动停止
-镜像的删除
-# Docker 指令除了单条使用外,还支持赋值、解析变量、嵌套使用单一容器管理
-单一容器管理
-每个容器被创建后,都会分配一个 CONTAINER ID 作为容器的唯一标示,后续对容器的启动、停止、
-修改、删除等所有操作,都是通过 CONTAINER ID 来完成,偏向于数据库概念中的主键
-docker ps --no-trunc 查看
-docker stop/start CONTAINERID 停止
-docker start/stop MywordPress 通过容器别名启动/停止
-docker inspect MywordPress 查看容器所有基本信息
-docker logs MywordPress 查看容器日志
-docker stats MywordPress 查看容器所占用的系统资源
-docker exec 容器名 容器内执行的命令 容器执行命令
-docker exec -it 容器名 /bin/bash 登入容器的bashrun 延伸
-run 延伸
---restart=always 容器的自动启动
--h x.xx.xx 设置容器主机名
---dns xx.xx.xx.xx 设置容器使用的 DNS 服务器
---dns-search DNS 搜索设置
---add-host hostname:IP 注入 hostname <> IP 解析
---rm 服务停止时自动删除2
-Docker-Compose多容器管理
-多容器管理
-Docker 提倡理念是 “一个容器一个进程”,假设一个服务需要由多个进程组成,就需要多个容器组成
-一个系统,相互分工和配合对外提供完整服务
-比如:博客系统
-组件1:mariadb
-组件2:WordPress 的 apache web
-在启动容器是,同一台主机下如果两个容器之间需要由数据交流,使用 --link 选项建立两个容器之间
-的互联,前提是建立是 mariadb 已经开启
-docker start db
-docker start MywordPress
-停止:
-docker stop db MywordPress 或 docker stop MywordPress 在 docker top dbDocker-compose install
-Docker-compose install
-容器编排工具,允许用户在一个模板( YAML 格式 )中定义一组相关联的容器,会根据 --link 等参数,
-对启动的优先级进行排序
-curl -L https://github.com/docker/compose/releases/download/1.14.0/docker-compose-`uname -
-s`-`uname -m` > /usr/local/bin/docker-compose
-docker versionDocker-compose 用法
-Docker-compose 命令用法
--f 指定使用的 yaml 文件位置 up -d 启动容器项目
-ps 显示所有容器信息 pause 暂停容器
-restart 重新启动容器 unpause 恢复暂停
-logs 查看日志信息 rm 删除容器
-config -q 验证 yaml 配置文件是否正确 stop 停止容器 start 启动容器Docker-compose yml 演示案例
-点击跳转O v e r
-
-
-
-
-2.3.4 镜像、仓库管理
-讲师:汪洋目录
-1
-2
-3
-Docker 镜像特性
-DockerFile
-Docker 仓库构建1
-Docker 镜像管理镜像特性 - 1
-镜像的特性 -1
-容器创建时需要指定镜像,每个镜像都由唯一的标示 Image ID ,和容器的 Container ID 一样,默认 128 位,可以使
-用前 16 为缩略形式,也可以使用镜像名与版本号两部分组合唯一标示,如果省略版本号,默认使用最新版本标签
-( latesr )
-镜像的分层:Docker 的镜像通过联合文件系统 ( union filesystem ) 将各层文件系统叠加在一起
-> bootfs:用于系统引导的文件系统,包括 bootloader 和 kernel,容器启动完成后会被卸载以节省内存资源
-> roofs:位于 bootfs 之上,表现为 Docker 容器的跟文件系统
->> 传统模式中,系统启动时,内核挂载 rootfs 时会首先将其挂载为“只读”模式,完整性自检完成后将其挂载为
-读写模式
->> Docker 中,rootfs 由内核挂载为“只读”模式,而后通过 UFS 技术挂载一个“可写” 层镜像特性 - 2
-镜像的特性 -2
-➢已有的分层只能读不能修改
-➢上层镜像优先级大于底层镜像2
-DockerFile镜像的诞生
-镜像的诞生
-1、容器 > 镜像 :docker commit CID xx.xx.xx
-工作在前台的守护进程至少一个
-2、DockerFile
-Dockfile 是一种被 Docker 程序解释的脚本,Dockerfile 由一条一条的指令组成,每条指令对应 Linux 下面
-的一条命令。Docker 程序将这些 Dockerfile 指令翻译真正的 Linux 命令。Dockerfile 有自己书写格式和支持的命令,
-Docker 程序解决这些命令间的依赖关系,类似于 Makefile。Docker 程序将读取 Dockerfile,根据指令生成定制的 image
-生成命令:docker
-打开 DockerFile 说明
-build
--t
-wangyang/jdk-tomcat
-.镜像的导出以及导入
-镜像的导出以及导入
-导出:docker save -o
-xx.xx.xx
-xx.xx.xx.tar
-导入:docker load -i xx.xx.xx.tar3
-Docker 仓库构建Docker 仓库构建
-Docker 仓库的构建
-1、官方仓库构建
-2、Harbor 构建O v e r
-
-
-
-
-
-2.3.5 网络管理
-讲师:汪洋目录
-1
-2
-3
-Docker 网络通讯
-Docker 网络模式修改
-常见隔离方式1
-Docker 网络通讯在通常情况下,Docker 使用网桥( Bridge )与 NAT 的通信模式
-container
-container
-eth0
-172.16.0.3/16
-eth0
-172.16.0.2/16
-host
-vethX
-docker0
-172.17.0.1/26
-NAT
-ETH0 10.1.1.10/8
-namespace
-vethXnetfilter 规则
-netfilter 规则
-(1) 容器访问外部网络
-iptables -t nat -A POSTROUTING -s 172.17.0.0/16 -o docker0 -j MASQUERADE
-(2) 外部网络访问容器
-docker run -d -p 80:80 apache
-iptables -t nat -A
-PREROUTING -m addrtype --dst-type LOCAL -j DOCKER
-iptables -t nat -A DOCKER ! -i docker0 -p tcp -m tcp --dport 80 -j
-DNAT --to-destination 172.17.0.2:802
-Docker 网络模式修改Docker 进程网络修改
-Docker 进程网络修改
--b, --bridge=””
-指定 Docker 使用的网桥设备,默认情况下 Docker 会自动创建和使用 docker0 网桥设备,通过此
+###　Docker 进程网络修改
+`-b, --bridge=""` 指定 Docker 使用的网桥设备,默认情况下 Docker 会自动创建和使用 docker0 网桥设备,通过此
 参数可以使用已经存在的设备
---bip 指定 Docker0 的 IP 和掩码,使用标准的 CIDR 形式,如 10.10.10.10/24
---dns 配置容器的 DNS,在启动 Docker 进程是添加,所有容器全部生效Docker 容器网络修改
-Docker 容器网络修改
---dns 用于指定启动的容器的 DNS
---net 用于指定容器的网络通讯方式,有以下四个值
-➢bridge:Docker 默认方式,网桥模式
-➢none:容器没有网络栈
-➢container:使用其它容器的网络栈,Docker容器会加入其它容器的 network namespace
-➢host:表示容器使用 Host 的网络,没有自己独立的网络栈。容器可以完全访问 Host 的网络,不安全暴露端口
+`--bip` 指定 Docker0 的 IP 和掩码,使用标准的 CIDR 形式,如 10.10.10.10/24
+`--dns` 配置容器的 DNS,在启动 Docker 进程是添加,所有容器全部生效Docker 容器网络修改
+
+###　Docker 容器网络修改
+
+`--dns` 用于指定启动的容器的 DNS
+`--net` 用于指定容器的网络通讯方式,有以下四个值
++ bridge:Docker 默认方式,网桥模式
++ none:容器没有网络栈
++ container:使用其它容器的网络栈,Docker容器会加入其它容器的 network namespace
++ host:表示容器使用 Host 的网络,没有自己独立的网络栈。容器可以完全访问 Host 的网络,不安全暴露端口
+
 暴露端口
 -p / P 选项的使用格式
 > -p :<ContainerPort> 将制定的容器端口映射至主机所有地址的一个动态端口
 > -p <HostPort>:<ContainerPort>:映射至指定的主机端口
 > -p <IP>::<ContainerPort>:映射至指定的主机的 IP 的动态端口
-> -p
-<IP>:<HostPort>:<ContainerPort>:映射至指定的主机 IP 的主机端口
+> -p　<IP>:<HostPort>:<ContainerPort>:映射至指定的主机 IP 的主机端口
 > -P(大):暴露所需要的所有端口
 * docker port ContainerName 可以查看容器当前的映射关系自定义 Docker0 网桥的网络地址
-自定义 Docker0 桥的网络地址
-修改 /etc/docker/daemon.json 文件
-{
-"bip": "192.168.1.5/24",
-"fixed-cidr": "10.20.0.0/16",
-"fixed-cidr-v6": "2001:db8::/64",
-"mtu": "1500",
-"default-gateway": "10.20.1.1",
-"default-gateway-v6": "2001:db8:abcd::89",
-"dns": ["10.20.1.2","10.20.1.3"]
-}3
-常见隔离方式基础命令说明
-netfilter 规则
-docker network ls
+
+###　自定义 Docker0 桥的网络地址
+
+修改 `/etc/docker/daemon.json` 文件
+
+	{
+		"bip": "192.168.1.5/24",
+		"fixed-cidr": "10.20.0.0/16",
+		"fixed-cidr-v6": "2001:db8::/64",
+		"mtu": "1500",
+		"default-gateway": "10.20.1.1",
+		"default-gateway-v6": "2001:db8:abcd::89",
+		"dns": ["10.20.1.2","10.20.1.3"]
+	}
+
+
+### 常见隔离方式基础命令说明
+
+
+`docker network ls`
 查看当前可用的网络类型
-docker network create -d 类型 网络空间名称
+`docker network create -d 类型` 网络空间名称
 类型分为:
-overlay network
-bridge network不同网络空间进行隔离
-netfilter 规则
++ `overlay network`
++ `bridge network`不同网络空间进行隔离
+
+`docker network create -d bridge lamp` 创建名为lamp的网络
+`docker run --name tomcat01 --network=lamp -d tomcat:v1.0` 创建容器时指定网络为上面创建的lamp
+ 
 docker network create -d bridge --subnet "172.26.0.0/16" --gateway "172.26.0.1" my-bridge-network
 docker run -d --network=my-bridge-network --name test1
 docker run -d --name test2
-hub.c.163.com/public/centos:6.7-tools
-hub.c.163.com/public/centos:6.7-toolsLinux 桥接器进行主机间通讯 - 1
-netfilter 规则
+
+### 桥接器进行主机间通讯
+
 [root@localhost network-scripts]# vi ifcfg-eth0
 DEVICE=eth0
 HWADDR=00:0C:29:06:A2:35
@@ -387,14 +104,12 @@ BOOTPROTO=static
 IPADDR=192.168.216.131
 NETMASK=255.255.255.0
 GATEWAY=192.168.216.2
-DNS=8.8.8.8Linux 桥接器进行主机间通讯 - 2
-netfilter 规则
+DNS=8.8.8.8
 [root@localhost network-scripts]# yum install -y git
 [root@localhost network-scripts]# git clone https://github.com/jpetazzo/pipework
 [root@localhost network-scripts]# cp pipework/pipework /usr/local/bin/
 [root@localhost network-scripts]# docker run -itd --net=none --name=ff centos-6-x86 bash
 [root@localhost network-scripts]# pipework br0 fl 192.168.216.135/24O v e rNameSpace
-O v e r
 
 
 
