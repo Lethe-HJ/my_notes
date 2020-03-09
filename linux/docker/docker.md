@@ -48,6 +48,7 @@ Docker 自身组件
         gpgkey=https://yum.dockerproject.org/gpg EOF
     ```
 `yum makecache`重新产生源的缓存
+`yum install docker`安装docker
 `systemctl start docker`
 `systemctl enable docker`
 `docker run hello-world`
@@ -70,11 +71,12 @@ mirror=https://kfp63jaj.mirror.aliyuncs.com \
 `docker run --name MyWordPress --link db:mysql -p 8080:80 -d wordpress`
 
 
+
 ## 基本命令
 
 ### 镜像
 
-docker images 列出本地所有镜像
+docker images 列出本地	所有镜像
 docker info 守护进程的系统资源设置
 docker search IMAGE_NAME 仓库的查询
 docker pull Docker 仓库的下载

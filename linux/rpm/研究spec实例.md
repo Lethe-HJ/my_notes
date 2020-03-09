@@ -373,3 +373,4 @@ cp /var/tmp/rpm-tmp* ~/rpmbuild/SPECS
 用以下命令将spec文件取出。
 　　$rpm -qlp *.src.rpm
 　　$rpm2cpio *.src.rpm｜cpio -ivh *.spec
+

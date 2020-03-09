@@ -75,3 +75,11 @@ hello-1.0
 ├── hello.py
 ├── PKG-INFO
 └── setup.py
+
+
+## 直接安装python源码
+
+`yum install -y epel-release`
+`yum install -y python-pip`安装pip
+`pip install -r requirements.txt`安装python依赖
+`pip install -i http://mirrors.aliyun.com/pypi/simple/ -r requirements.txt --trusted-host mirrors.aliyun.com`指定源且相信该源安装python依赖

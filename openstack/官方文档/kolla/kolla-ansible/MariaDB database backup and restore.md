@@ -1,3 +1,0 @@
-# MariaDB database backup and restore  MariaDB数据库备份和恢复
-Kolla-Ansible can facilitate either full or incremental backups of data hosted in MariaDB. It achieves this using Mariabackup, a tool designed to allow for ‘hot backups’ - an approach which means that consistent backups can be taken without any downtime for your database or your cloud.
-Kolla-Ansible可以支持MariaDB中数据的完全备份或增量备份。它使用Mariabackup实现了这一点，这是一个为“热备份”而设计的工具——这种方法意味着可以对数据库或云进行一致的备份，而不需要停机。
