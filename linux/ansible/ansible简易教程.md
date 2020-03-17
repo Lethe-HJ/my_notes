@@ -921,3 +921,315 @@ Listen {{ listen_port }}
 
 3）查看目录结构
 复制代码
+
+目录结构
+`$ tree .`
+.
+├── templates
+│   └── httpd.conf.j2
+└── testtmp.yml
+
+## template之when
+
+条件测试：如果需要根据变量、facts或此前任务的执行结果来做为某task执行与否的前提时要用到条件测试，通过when语句执行，在task中使用jinja2的语法格式、
+when语句：
+在task后添加when子句即可使用条件测试；when语句支持jinja2表达式语法。
+
+类似这样：
+
+```yaml
+tasks:
+  - command: /bin/false
+    register: result
+    ignore_errors: True
+  - command: /bin/something
+    when: result|failed
+  - command: /bin/something_else
+    when: result|success
+  - command: /bin/still/something_else
+    when: result|skipped
+```
+
+示例：通过when语句完善上面的httpd配置
+
+1）准备两个配置文件，一个centos6系统httpd配置文件，一个centos7系统httpd配置文件。
+复制代码
+
+`$ tree templates/`
+templates/
+├── httpd6.conf.j2     #6系统2.2.15版本httpd配置文件
+└── httpd7.conf.j2     #7系统2.4.6版本httpd配置文件
+
+`$ cat testtmp.yml` 
+when示例
+```yaml
+---
+- hosts: all
+  remote_user: root
+  vars:
+    - listen_port: 88
+
+  tasks:
+    - name: Install Httpd
+      yum: name=httpd state=installed
+    - name: Config System6 Httpd
+      template: src=httpd6.conf.j2 dest=/etc/httpd/conf/httpd.conf
+      when: ansible_distribution_major_version == "6"   #判断系统版本，为6便执行上面的template配置6的配置文件
+      notify: Restart Httpd
+    - name: Config System7 Httpd
+      template: src=httpd7.conf.j2 dest=/etc/httpd/conf/httpd.conf
+      when: ansible_distribution_major_version == "7"   #判断系统版本，为7便执行上面的template配置7的配置文件
+      notify: Restart Httpd
+    - name: Start Httpd
+      service: name=httpd state=started
+
+  handlers:
+    - name: Restart Httpd
+      service: name=httpd state=restarted
+```
+
+3）执行playbook
+
+`$ ansible-playbook testtmp.yml`
+
+## template之with_items
+
+with_items迭代，当有需要重复性执行的任务时，可以使用迭代机制。
+对迭代项的引用，固定变量名为“item”，要在task中使用with_items给定要迭代的元素列表。
+列表格式：
+  字符串
+  字典
+
+示例1：通过with_items安装多个不同软件
+
+编写playbook
+`$ cat testwith.yml` 
+示例with_items
+```yaml
+---
+- hosts: all
+  remote_user: root
+
+  tasks:
+    - name: Install Package
+      yum: name={{ item }} state=installed   #引用item获取值
+      with_items:     #定义with_items
+        - httpd
+        - vsftpd
+        - nginx
+```
+
+示例2：通过嵌套子变量创建用户并加入不同的组
+
+1）编写playbook
+`$ cat testwith01.yml` 
+示例with_items嵌套子变量
+```yaml
+---
+- hosts: all
+  remote_user: root
+
+  tasks:
+    - name: Create New Group
+      group: name={{ item }} state=present
+      with_items: 
+        - group1
+        - group2
+        - group3 
+
+    - name: Create New User
+      user: name={{ item.name }} group={{ item.group }} state=present
+      with_items:
+        - { name: 'user1', group: 'group1' } 
+        - { name: 'user2', group: 'group2' } 
+        - { name: 'user3', group: 'group3' }
+```
+
+
+2）执行playbook并验证
+
+执行playbook
+`$ ansible-playbook testwith01.yml`
+
+验证是否成功创建用户及组
+`$ ansible all -m shell -a 'tail -3 /etc/passwd'`
+
+### template之for if
+
+通过使用for，if可以更加灵活的生成配置文件等需求，还可以在里面根据各种条件进行判断，然后生成不同的配置文件、或者服务器配置相关等。
+
+1）编写playbook
+
+`$ cat testfor01.yml`
+
+template for 示例1
+
+```yaml
+---
+- hosts: all
+  remote_user: root
+  vars:
+    nginx_vhost_port:
+      - 81
+      - 82
+      - 83
+
+  tasks:
+    - name: Templage Nginx Config
+      template: src=nginx.conf.j2 dest=/tmp/nginx_test.conf
+```
+
+2）模板文件编写
+
+循环playbook文件中定义的变量，依次赋值给port
+`$ cat templates/nginx.conf.j2`
+
+    {% for port in nginx_vhost_port %}
+    server{
+        listen: {{ port }};
+        server_name: localhost;
+    }
+    {% endfor %}
+
+示例2
+
+1）编写playbook
+
+`$ cat testfor02.yml`
+
+template for 示例
+
+```yaml
+---
+- hosts: all
+  remote_user: root
+  vars:
+    nginx_vhosts:
+      - web1:
+        listen: 8081
+        server_name: "web1.example.com"
+        root: "/var/www/nginx/web1"
+      - web2:
+        listen: 8082
+        server_name: "web2.example.com"
+        root: "/var/www/nginx/web2"
+      - web3:
+        listen: 8083
+        server_name: "web3.example.com"
+        root: "/var/www/nginx/web3"
+
+  tasks:
+    - name: Templage Nginx Config
+      template: src=nginx.conf.j2 dest=/tmp/nginx_vhost.conf
+```
+
+2）模板文件编写
+
+`$ cat templates/nginx.conf.j2`
+
+```yaml 
+{% for vhost in nginx_vhosts %}
+server{
+     listen:    {{ vhost.listen }};
+     server_name:    {{ vhost.server_name }};
+     root:   {{ vhost.root }}; 
+}
+{% endfor %}
+```
+
+3）执行playbook并查看生成结果
+
+`$ ansible-playbook testfor02.yml`
+
+去到一个节点看下生成的结果发现自动生成了三个虚拟主机
+`$ cat /tmp/nginx_vhost.conf` 
+
+    server{
+        listen:    8081;
+        server_name:    web1.example.com;
+        root:   /var/www/nginx/web1; 
+    }
+    server{
+        listen:    8082;
+        server_name:    web2.example.com;
+        root:   /var/www/nginx/web2; 
+    }
+    server{
+        listen:    8083;
+        server_name:    web3.example.com;
+        root:   /var/www/nginx/web3; 
+    }
+
+示例3
+
+在for循环中再嵌套if判断，让生成的配置文件更加灵活
+
+1）编写playbook
+
+`$ cat testfor03.yml` 
+
+template for 示例
+```yaml
+---
+- hosts: all
+  remote_user: root
+  vars:
+    nginx_vhosts:
+      - web1:
+        listen: 8081
+        root: "/var/www/nginx/web1"
+      - web2:
+        server_name: "web2.example.com"
+        root: "/var/www/nginx/web2"
+      - web3:
+        listen: 8083
+        server_name: "web3.example.com"
+        root: "/var/www/nginx/web3"
+
+  tasks:
+    - name: Templage Nginx Config
+      template: src=nginx.conf.j2 dest=/tmp/nginx_vhost.conf
+```
+
+2）模板文件编写
+
+说明：这里添加了判断，如果listen没有定义的话，默认端口使用8888，如果server_name有定义，那么生成的配置文件中才有这一项。
+`$ cat templates/nginx.conf.j2`
+
+```yaml
+{% for vhost in nginx_vhosts %}
+server{
+     {% if vhost.listen is defined %}
+     listen:    {{ vhost.listen }};
+     {% else %}
+     listen: 8888;
+     {% endif %}
+     {% if vhost.server_name is defined %}
+     server_name:    {{ vhost.server_name }};
+     {% endif %}
+     root:   {{ vhost.root }}; 
+}
+{% endfor %}
+```
+
+3）执行playbook并查看生成结果
+
+`$ ansible-playbook testfor03.yml`
+
+去到一个节点看下生成的结果发现自动生成了三个虚拟主机
+`$ cat /tmp/nginx_vhost.conf` 
+
+    server{
+            listen:    8081;
+            root:   /var/www/nginx/web1; 
+    }
+    server{
+            listen: 8888;
+            server_name:    web2.example.com;
+            root:   /var/www/nginx/web2; 
+    }
+    server{
+            listen:    8083;
+            server_name:    web3.example.com;
+            root:   /var/www/nginx/web3; 
+    }
