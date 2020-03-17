@@ -18,7 +18,7 @@ ip=192.168.80.$var
 
 ping -c2 $ip >/dev/null 2>&1
 
-if [ $? = 0 ];then
+if [ $? = 0 ];then/
 
 #如果ping成功显示OK
 
