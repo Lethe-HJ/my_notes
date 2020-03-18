@@ -1233,3 +1233,177 @@ server{
             server_name:    web3.example.com;
             root:   /var/www/nginx/web3; 
     }
+
+# Ansible之Roles
+
+## Roles介绍
+
+ansible自1.2版本引入的新特性，用于层次性、结构化地组织playbook。roles能够根据层次型结构自动装载变量文件、tasks以及handlers等。要使用roles只需要在playbook中使用include指令引入即可。简单来讲，roles就是通过分别将变量、文件、任务、模板及处理器放置于单独的目录中，并可以便捷的include它们的一种机制。角色一般用于基于主机构建服务的场景中，但也可以是用于构建守护进程等场景中。主要使用场景代码复用度较高的情况下。
+
+    roles:          <--所有的角色必须放在roles目录下，这个目录可以自定义位置，默认的位置在/etc/ansible/roles
+        project:      <---具体的角色项目名称，比如nginx、tomcat、php
+            files：     <--用来存放由copy模块或script模块调用的文件。
+            templates： <--用来存放jinjia2模板，template模块会自动在此目录中寻找jinjia2模板文件。
+            tasks：     <--此目录应当包含一个main.yml文件，用于定义此角色的任务列表，此文件可以使用include包含其它的位于此目录的task文件。
+                main.yml
+            handlers：  <--此目录应当包含一个main.yml文件，用于定义此角色中触发条件时执行的动作。
+                main.yml
+            vars：      <--此目录应当包含一个main.yml文件，用于定义此角色用到的变量。
+                main.yml
+            defaults：  <--此目录应当包含一个main.yml文件，用于为当前角色设定默认变量。
+                main.yml
+            meta：      <--此目录应当包含一个main.yml文件，用于定义此角色的特殊设定及其依赖关系。
+                main.yml
+
+## Roles示例
+
+通过ansible roles安装配置httpd服务，此处的roles使用默认的路径/etc/ansible/roles
+
+1）创建目录
+
+`$ cd /etc/ansible/roles/`
+
+创建需要用到的目录
+`$ mkdir -p httpd/{handlers,tasks,templates,vars}`
+`$ cd httpd/`
+`$ tree .`
+
+.
+
+├── handlers
+
+├── tasks
+
+├── templates
+
+└── vars
+
+2）变量文件准备vars/main.yml
+
+`$ vim vars/main.yml`
+
+    PORT: 8088        #指定httpd监听的端口
+    USERNAME: www     #指定httpd运行用户
+    GROUPNAME: www    #指定httpd运行组
+
+3）配置文件模板准备templates/httpd.conf.j2
+
+copy一个本地的配置文件放在templates/下并已j2为后缀
+
+`$ cp /etc/httpd/conf/httpd.conf templates/httpd.conf.j2`
+
+进行一些修改，调用上面定义的变量
+
+`$ vim templates/httpd.conf.j2`
+
+    Listen {{ PORT }} 
+    User {{ USERNAME }}
+    Group {{ GROUPNAME }}
+
+4）任务剧本编写，创建用户、创建组、安装软件、配置、启动等
+
+创建组的task
+
+`$ vim tasks/group.yml`
+
+    - name: Create a Startup Group
+      group: name=www gid=60 system=yes
+
+创建用户的task
+
+`$ vim tasks/user.yml`
+
+    - name: Create Startup Users
+      user: name=www uid=60 system=yes shell=/sbin/nologin
+
+安装软件的task
+
+`$ vim tasks/install.yml`
+
+    - name: Install Package Httpd
+      yum: name=httpd state=installed
+
+配置软件的task
+
+`$ vim tasks/config.yml`
+    
+    - name: Copy Httpd Template File
+      template: src=httpd.conf.j2 dest=/etc/httpd/conf/httpd.conf
+      notify: Restart Httpd
+
+启动软件的task
+
+`$ vim tasks/start.yml`
+
+    - name: Start Httpd Service
+      service: name=httpd state=started enabled=yes
+
+编写main.yml，将上面的这些task引入进来
+
+`$ vim tasks/main.yml`
+
+    - include: group.yml
+    - include: user.yml
+    - include: install.yml
+    - include: config.yml
+    - include: start.ym
+
+5）编写重启httpd的handlers，handlers/main.yml
+
+`$ vim handlers/main.yml`
+
+这里的名字需要和task中的notify保持一致
+
+    - name: Restart Httpd
+      service: name=httpd state=restarted
+
+6）编写主的httpd_roles.yml文件调用httpd角色
+复制代码
+
+`$ cd ..`
+
+`$ vim httpd_roles.yml`
+
+    ---
+    - hosts: all
+    remote_user: root
+    roles:
+        - role: httpd        #指定角色名称
+
+7）整体的一个目录结构查看
+
+`$ tree .`
+
+    .
+    ├── httpd
+    │   ├── handlers
+    │   │   └── main.yml
+    │   ├── tasks
+    │   │   ├── config.yml
+    │   │   ├── group.yml
+    │   │   ├── install.yml
+    │   │   ├── main.yml
+    │   │   ├── start.yml
+    │   │   └── user.yml
+    │   ├── templates
+    │   │   └── httpd.conf.j2
+    │   └── vars
+    │       └── main.yml
+    └── httpd_roles.yml
+
+8）测试playbook语法是否正确
+
+`$ ansible-playbook -C httpd_roles.yml`
+
+
+9）上面的测试没有问题，正式执行playbook
+
+`$ ansible-playbook httpd_roles.yml`
+
+
+1、编写任务(task)的时候，里面不需要写需要执行的主机，单纯的写某个任务是干什么的即可，装软件的就是装软件的，启动的就是启动的。单独做某一件事即可，最后通过main.yml将这些单独的任务安装执行顺序include进来即可，这样方便维护且一目了然。
+2、定义变量时候直接安装k:v格式将变量写在vars/main.yml文件即可，然后task或者template直接调用即可，会自动去vars/main.yml文件里面去找。
+3、定义handlers时候，直接在handlers/main.yml文件中写需要做什么事情即可，多可的话可以全部写在该文件里面，也可以像task那样分开来写，通过include引入一样的可以。在task调用notify时直接写与handlers名字对应即可(二者必须高度一直)。
+4、模板文件一样放在templates目录下即可，task调用的时后直接写文件名字即可，会自动去到templates里面找。注意：如果是一个角色调用另外一个角色的单个task时后，那么task中如果有些模板或者文件，就得写绝对路径了。
+
+
