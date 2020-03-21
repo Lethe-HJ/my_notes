@@ -1,6 +1,6 @@
 # 快速配置django_rest_framework新项目
 
-1. 确保python环境正确(这里用的是python3.74)
+1. 确保python环境正确(这里用的是python3.64)
 2. `pip install virtualenv` 安装virtualenv
 3. 新建项目文件夹learn,并切换到该文件夹下
 4. `virtualenv --no-site-packages venv` 新建python环境
@@ -40,4 +40,8 @@
 11. 启动django,确认成功 `python manage.py runserver`
 12. 启动mariadb`net start mysql`
 13. 同步数据库`python manage.py migrate`
-13. 
+13. 新建app
+
+`python manage.py startapp app_first`
+
+在settings.py中的INSTALLED_APPS中加入`'app_first.apps.app_firstConfig',`或者写`app_first`两者皆可

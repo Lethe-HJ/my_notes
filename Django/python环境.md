@@ -13,7 +13,7 @@
 使用环境变量指定的python在项目根目录下创建一个独立的Python运行环境，命名为venv：
 `$ virtualenv --no-site-packages venv`
 
-`--no-site-packages` 不复制 系统Python环境中的第三方包
+`--no-site-packages` 不复制 系统Python环境中的第三方包 20版本没有这个参数
 
 `--system-site-packages`是否继承系统三方库,项目检索库的时候，也会到系统的三方库中找
 不添加时，默认只到虚拟环境中查找库
@@ -56,12 +56,35 @@ eg: pip install scrapy -i https://pypi.tuna.tsinghua.edu.cn/simple   --trusted-h
 修改 ~/.pip/pip.conf (没有就创建一个)， 内容如下：
 
 [global]
-index-url = https://pypi.tuna.tsinghua.edu.cn/simple
+timeout = 60
+index-url = http://pypi.douban.com/simple
+trusted-host = pypi.douban.com
 
 ##### windows
 
 直接在user目录中创建一个pip目录，如：C:\Users\xx\pip，新建文件pip.ini，内容如下
 
 [global]
-index-url = https://pypi.tuna.tsinghua.edu.cn/simple
+timeout = 60
+index-url = http://pypi.douban.com/simple
+trusted-host = pypi.douban.com
 
+
+## python版本切换
+
+打开终端分别输入下面两条命令：
+
+`sudo update-alternatives --install /usr/bin/python python /usr/bin/python2 100`   
+`sudo update-alternatives --install /usr/bin/python python /usr/bin/python3 150`
+
+然后再终端输入：
+
+    python
+
+如果无误，此时python版本应该切换到默认的python3了。
+
+如果需要重新切换回python只需要在终端输入：
+
+`sudo update-alternatives --config python`
+
+然后选者你需要的python版本，输入序号回车即可
