@@ -20,3 +20,4 @@ df -h 查询分区情况
 
 统计 users 文件的行数
 wc -l users
+

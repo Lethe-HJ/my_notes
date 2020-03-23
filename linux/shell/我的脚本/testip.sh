@@ -8,7 +8,7 @@ function testip(){
         if [ "$num" -lt 255 ];
         then
             ip=$1.$num
-            ping -c2 $ip >/dev/null 2>&1
+            ping -c 2 $ip >/dev/null 2>&1
             # echo -ne '\b\b'
             # echo "$num"
             if [ $? = 0 ];
