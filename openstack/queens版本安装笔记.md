@@ -81,7 +81,7 @@ compute1进行类似配置(但 ifcfg-ens3中IPADDR="192.168.80.246")
 
 `yum install mariadb mariadb-server python2-PyMySQL`
 
-`$ vi /etc/my.cnf.d/openstack.cnf`
+`$ vim /etc/my.cnf.d/openstack.cnf`
 
     [mysqld]
     bind-address = 192.168.1.30
@@ -111,7 +111,7 @@ compute1进行类似配置(但 ifcfg-ens3中IPADDR="192.168.80.246")
 
 `yum install memcached python-memcached`
 
-vi /etc/sysconfig/memcached
+vim /etc/sysconfig/memcached
 
     OPTIONS="-l 127.0.0.1,::1,control1"
 
@@ -121,7 +121,7 @@ vi /etc/sysconfig/memcached
 ## Etcd
 
 `yum install etcd`
-`vi /etc/etcd/etcd.conf`
+`vim /etc/etcd/etcd.conf`
 
 ```
 #[Member]
@@ -152,7 +152,7 @@ ETCD_INITIAL_CLUSTER_STATE="new"
 
 `yum install openstack-keystone httpd mod_wsgi`
 
-`vi  /etc/keystone/keystone.conf`
+`vim  /etc/keystone/keystone.conf`
 
     [database]
     # ...
@@ -178,7 +178,7 @@ ETCD_INITIAL_CLUSTER_STATE="new"
 
 设置apache中的ServerName
 
-`vi /etc/httpd/conf/httpd.conf`
+`vim /etc/httpd/conf/httpd.conf`
 
     ServerName control1
 
@@ -219,7 +219,7 @@ ETCD_INITIAL_CLUSTER_STATE="new"
 
 `openstack --os-auth-url http://control1:5000/v3 --os-project-domain-name Default --os-user-domain-name Default --os-project-name demo --os-username demo token issue`
 
-`vi admin-openrc`
+`vim admin-openrc`
 
     export OS_PROJECT_DOMAIN_NAME=Default
     export OS_USER_DOMAIN_NAME=Default
@@ -230,7 +230,7 @@ ETCD_INITIAL_CLUSTER_STATE="new"
     export OS_IDENTITY_API_VERSION=3
     export OS_IMAGE_API_VERSION=2
 
-`vi demo-openrc`
+`vim demo-openrc`
 
     export OS_PROJECT_DOMAIN_NAME=Default
     export OS_USER_DOMAIN_NAME=Default
@@ -245,11 +245,41 @@ ETCD_INITIAL_CLUSTER_STATE="new"
 
 `openstack token issue`
 
+### 验证
+
+`unset OS_AUTH_URL OS_PASSWORD`
+
+`openstack --os-auth-url http://control1:35357/v3 --os-project-domain-name Default --os-user-domain-name Default --os-project-name admin --os-username admin token issue`
+
++------------+-----------------------------------------------------------------+
+| Field      | Value                                                           |
++------------+-----------------------------------------------------------------+
+| expires    | 2016-02-12T20:14:07.056119Z                                     |
+| id         | gAAAAABWvi7_B8kKQD9wdXac8MoZiQldmjEO643d-e_j-XXq9AmIegIbA7UHGPv |
+|            | atnN21qtOMjCFWX7BReJEQnVOAj3nclRQgAYRsfSU_MrsuWb4EDtnjU7HEpoBb4 |
+|            | o6ozsA_NmFWEpLeKy0uNn_WeKbAhYygrsmQGA49dclHVnz-OMVLiyM9ws       |
+| project_id | 343d245e850143a096806dfaefa9afdc                                |
+| user_id    | ac3377633149401296f6c0d92d79dc16                                |
++------------+-----------------------------------------------------------------+
+
+`openstack --os-auth-url http://control1:5000/v3 --os-project-domain-name Default --os-user-domain-name Default --os-project-name demo --os-username demo token issue`
+
++------------+-----------------------------------------------------------------+
+| Field      | Value                                                           |
++------------+-----------------------------------------------------------------+
+| expires    | 2016-02-12T20:15:39.014479Z                                     |
+| id         | gAAAAABWvi9bsh7vkiby5BpCCnc-JkbGhm9wH3fabS_cY7uabOubesi-Me6IGWW |
+|            | yQqNegDDZ5jw7grI26vvgy1J5nCVwZ_zFRqPiz_qhbq29mgbQLglbkq6FQvzBRQ |
+|            | JcOzq3uwhzNxszJWmzGC7rJE_H0A_a3UFhqv8M4zMRYSbS2YF0MyFmp_U       |
+| project_id | ed0b60bf607743088218b0a533d5943f                                |
+| user_id    | 58126687cbcc4888bfa9ab73a2256f27                                |
++------------+-----------------------------------------------------------------+
+
 ## 安装glance
 
-mysql -u root -p
+`mysql -u root -p`
 
-CREATE DATABASE glance;
+`CREATE DATABASE glance;`
 
 `GRANT ALL PRIVILEGES ON glance.* TO 'glance'@'localhost' IDENTIFIED BY 'hujin666';`
 
@@ -272,7 +302,7 @@ CREATE DATABASE glance;
 
 `yum install openstack-glance`
 
-`vi /etc/glance/glance-api.conf`
+`vim /etc/glance/glance-api.conf`
 
     [database]
     # ...
@@ -302,7 +332,7 @@ CREATE DATABASE glance;
     default_store = file
     filesystem_store_datadir = /var/lib/glance/images/
 
-`vi /etc/glance/glance-registry.conf`
+`vim /etc/glance/glance-registry.conf`
 
     [database]
     # ...
@@ -332,6 +362,46 @@ CREATE DATABASE glance;
 `systemctl enable openstack-glance-api.service openstack-glance-registry.service`
 
 `systemctl start openstack-glance-api.service openstack-glance-registry.service`
+
+### 验证
+
+`. admin-openrc`
+
+`wget https://launchpad.net/cirros/trunk/0.3.0/+download/cirros-0.3.0-x86_64-disk.img`
+
+`openstack image create "cirros" --file cirros-0.4.0-x86_64-disk.img --disk-format qcow2 --container-format bare --public`
+
+
++------------------+------------------------------------------------------+
+| Field            | Value                                                |
++------------------+------------------------------------------------------+
+| checksum         | 133eae9fb1c98f45894a4e60d8736619                     |
+| container_format | bare                                                 |
+| created_at       | 2015-03-26T16:52:10Z                                 |
+| disk_format      | qcow2                                                |
+| file             | /v2/images/cc5c6982-4910-471e-b864-1098015901b5/file |
+| id               | cc5c6982-4910-471e-b864-1098015901b5                 |
+| min_disk         | 0                                                    |
+| min_ram          | 0                                                    |
+| name             | cirros                                               |
+| owner            | ae7a98326b9c455588edd2656d723b9d                     |
+| protected        | False                                                |
+| schema           | /v2/schemas/image                                    |
+| size             | 13200896                                             |
+| status           | active                                               |
+| tags             |                                                      |
+| updated_at       | 2015-03-26T16:52:10Z                                 |
+| virtual_size     | None                                                 |
+| visibility       | public                                               |
++------------------+------------------------------------------------------+
+
+`openstack image list`
+
++--------------------------------------+--------+--------+
+| ID                                   | Name   | Status |
++--------------------------------------+--------+--------+
+| 38047887-61a7-41ea-9b49-27987d5e8bb9 | cirros | active |
++--------------------------------------+--------+--------+
 
 
 ## 安装nova
@@ -389,7 +459,7 @@ CREATE DATABASE glance;
 
 `yum install openstack-nova-api openstack-nova-conductor  openstack-nova-console openstack-nova-novncproxy openstack-nova-scheduler openstack-nova-placement-api`
 
-`vi /etc/nova/nova.conf`
+`vim /etc/nova/nova.conf`
 
 ```
 [DEFAULT]
@@ -452,7 +522,7 @@ username = placement
 password = hujin666
 ```
 
-`vi /etc/httpd/conf.d/00-nova-placement-api.conf`
+`vim /etc/httpd/conf.d/00-nova-placement-api.conf`
 
     <Directory /usr/bin>
     <IfVersion >= 2.4>
@@ -491,7 +561,7 @@ openstack-nova-conductor.service openstack-nova-novncproxy.service
 
 `yum install openstack-nova-compute`
 
-`vi /etc/nova/nova.conf`
+`vim /etc/nova/nova.conf`
 
 ```
 [DEFAULT]
@@ -546,7 +616,7 @@ password = hujin666
 
 `egrep -c '(vmx|svm)' /proc/cpuinfo`
 
-`vi /etc/nova/nova.conf`
+`vim /etc/nova/nova.conf`
 
 ```
 [libvirt]
@@ -554,10 +624,23 @@ password = hujin666
 virt_type = qemu
 ```
 
-`systemctl enable libvirtd.service openstack-nova-compute.service`
+`systemctl enable libvirtd.service`
+`systemctl enable openstack-nova-compute.service`
 `systemctl start libvirtd.service openstack-nova-compute.service`
 
+如果一直在等待状态的话，可能是control1的5672端口没有开放
+`cat /var/log/nova/nova-compute.log`
+在control1上执行
+
+`firewall-cmd --zone=public --add-port=5672/tcp --permanent`
+<!-- `firewall-cmd --zone=public --add-port=5672/udp --permanent` -->
+`firewall-cmd --reload`
+
+在control1上运行以下命令
+
 `. admin-openrc`
+
+`nova-manage cell_v2 discover_hosts`  注册这个新的计算节点
 
 `openstack compute service list --service nova-compute`
 
@@ -566,6 +649,8 @@ virt_type = qemu
 
 
 ## neutron
+
+### 在control1中
 
 `mysql -u root -p`
 
@@ -589,23 +674,129 @@ virt_type = qemu
 
 `openstack endpoint create --region RegionOne network admin http://control1:9696`
 
-`vi /etc/neutron/metadata_agent.ini`
+`yum install -y openstack-neutron openstack-neutron-ml2 openstack-neutron-linuxbridge ebtables`
+
+`vim /etc/neutron/neutron.conf`
+
+```
+[database]
+# ...
+connection = mysql+pymysql://neutron:hujin666@control1/neutron
+
+[DEFAULT]
+# ...
+core_plugin = ml2
+service_plugins = router
+allow_overlapping_ips = true
+transport_url = rabbit://openstack:hujin666@control1
+auth_strategy = keystone
+notify_nova_on_port_status_changes = true
+notify_nova_on_port_data_changes = true
+
+[keystone_authtoken]
+# ...
+auth_uri = http://control1:5000
+auth_url = http://control1:35357
+memcached_servers = control1:11211
+auth_type = password
+project_domain_name = default
+user_domain_name = default
+project_name = service
+username = neutron
+password = hujin666
+
+
+
+[nova]
+# ...
+auth_url = http://control1:35357
+auth_type = password
+project_domain_name = default
+user_domain_name = default
+region_name = RegionOne
+project_name = service
+username = nova
+password = hujin666
+
+[oslo_concurrency]
+# ...
+lock_path = /var/lib/neutron/tmp
+
+```
+
+`vim /etc/neutron/plugins/ml2/ml2_conf.ini`
+
+```
+[ml2]
+type_drivers = flat,vlan,vxlan
+tenant_network_types = vxlan
+mechanism_drivers = linuxbridge,l2population
+extension_drivers = port_security
+
+[ml2_type_flat]
+# ...
+flat_networks = provider
+
+[securitygroup]
+# ...
+enable_ipset = true
+
+```
+
+`vim /etc/neutron/plugins/ml2/linuxbridge_agent.ini`
+
+```
+[linux_bridge]
+physical_interface_mappings = provider:ens9
+
+[vxlan]
+enable_vxlan = true
+local_ip = 192.168.7.158
+l2_population = true
+
+[securitygroup]
+# ...
+enable_security_group = true
+firewall_driver = neutron.agent.linux.iptables_firewall.IptablesFirewallDriver
+
+
+```
+
+`vim /etc/neutron/l3_agent.ini`
 
 ```
 [DEFAULT]
 # ...
-nova_metadata_host = controller
+interface_driver = linuxbridge
+```
+
+`vim /etc/neutron/dhcp_agent.ini`
+
+```
+[DEFAULT]
+# ...
+interface_driver = linuxbridge
+dhcp_driver = neutron.agent.linux.dhcp.Dnsmasq
+enable_isolated_metadata = true
+```
+
+`vim /etc/neutron/metadata_agent.ini`
+
+```
+[DEFAULT]
+# ...
+nova_metadata_host = control1
 metadata_proxy_shared_secret = hujin666
 
 ```
 
-`vi /etc/nova/nova.conf file`
+`vim /etc/nova/nova.conf`
 ```
 [neutron]
 # ...
 url = http://control1:9696
 auth_url = http://control1:35357
-auth_type = password
+auth_type = passwordn
 project_domain_name = default
 user_domain_name = default
 region_name = RegionOne
@@ -630,3 +821,321 @@ metadata_proxy_shared_secret = hujin666
 `systemctl enable neutron-l3-agent.service`
 
 `systemctl start neutron-l3-agent.service`
+
+
+### 在compute1中
+
+`yum install openstack-neutron-linuxbridge ebtables ipset`
+
+`vim /etc/neutron/neutron.conf`
+
+```
+[DEFAULT]
+# ...
+transport_url = rabbit://openstack:hujin666@control1
+auth_strategy = keystone
+
+
+[keystone_authtoken]
+# ...
+auth_uri = http://control1:5000
+auth_url = http://control1:35357
+memcached_servers = control1:11211
+auth_type = password
+project_domain_name = default
+user_domain_name = default
+project_name = service
+username = neutron
+password = hujin666
+
+[oslo_concurrency]
+# ...
+lock_path = /var/lib/neutron/tmp
+```
+
+`vim /etc/neutron/plugins/ml2/linuxbridge_agent.ini`
+
+```
+[linux_bridge]
+physical_interface_mappings = provider:ens9
+
+[vxlan]
+enable_vxlan = true
+local_ip = 192.168.7.191
+l2_population = true
+
+[securitygroup]
+# ...
+enable_security_group = true
+firewall_driver = neutron.agent.linux.iptables_firewall.IptablesFirewallDriver
+
+```
+
+`vim /etc/nova/nova.conf`
+
+```
+[neutron]
+# ...
+url = http://control1:9696
+auth_url = http://control1:35357
+auth_type = password
+project_domain_name = default
+user_domain_name = default
+region_name = RegionOne
+project_name = service
+username = neutron
+password = hujin666
+
+```
+
+`systemctl restart openstack-nova-compute.service`
+
+`systemctl enable neutron-linuxbridge-agent.service`
+
+`systemctl start neutron-linuxbridge-agent.service`
+
+### 验证
+
+在contorl1中
+`openstack network agent list`
+
+确保以下服务都是UP状态
+
+control1 | neutron-linuxbridge-agent
+compute1 | neutron-linuxbridge-agent
+control1 | neutron-l3-agent
+control1 | neutron-dhcp-agent
+control1 | neutron-metadata-agent
+
+## dashboard
+
+在contorl1中
+
+`yum install openstack-dashboard`
+
+`vim /etc/openstack-dashboard/local_settings`
+
+```
+OPENSTACK_HOST = "control1"
+ALLOWED_HOSTS = ['*']
+
+
+SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
+
+CACHES = {
+    'default': {
+         'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
+         'LOCATION': 'control1:11211',
+    }
+}
+
+OPENSTACK_KEYSTONE_URL = "http://%s:5000/v3" % OPENSTACK_HOST
+
+OPENSTACK_KEYSTONE_MULTIDOMAIN_SUPPORT = True
+
+OPENSTACK_API_VERSIONS = {
+    "identity": 3,
+    "image": 2,
+    "volume": 2,
+}
+
+OPENSTACK_KEYSTONE_DEFAULT_DOMAIN = "Default"
+
+OPENSTACK_KEYSTONE_DEFAULT_ROLE = "user"
+
+
+TIME_ZONE = "Asia/Shanghai"
+
+```
+
+
+`vim /etc/httpd/conf.d/openstack-dashboard.conf`
+
+```
+WSGIApplicationGroup %{GLOBAL}
+```
+
+`systemctl restart httpd.service memcached.service`
+
+
+### 验证
+
+ http://control1/dashboard
+
+domain: default
+user: demo
+password: hujin666
+
+
+ ## cinder
+
+### 在存储节点上
+
+`yum install lvm2 device-mapper-persistent-data`
+
+`systemctl enable lvm2-lvmetad.service`
+
+`systemctl start lvm2-lvmetad.service`
+
+在virt-manager中给compute1加一块Disk
+然后关机（此时硬盘才会被加载）
+`fdisk -l` 查看有没有刚刚创建的硬盘(/dev/sdb)
+
+`pvcreate /dev/sdb`
+
+`vgcreate cinder-volumes /dev/sdb`
+
+`vim /etc/lvm/lvm.conf`
+
+
+```
+devices {
+...
+filter = [ "a/sdb/", "r/.*/"]
+
+```
+
+
+`yum install openstack-cinder targetcli python-keystone`
+
+`vim /etc/cinder/cinder.conf`
+
+```
+[database]
+# ...
+connection = mysql+pymysql://cinder:hujin666@control1/cinder
+
+[DEFAULT]
+# ...
+transport_url = rabbit://openstack:hujin666@control1
+auth_strategy = keystone
+my_ip = 192.168.80.246
+# my_ip = MANAGEMENT_INTERFACE_IP_ADDRESS
+enabled_backends = lvm
+glance_api_servers = http://control1:9292
+
+[keystone_authtoken]
+# ...
+auth_uri = http://control1:5000
+auth_url = http://control1:5000
+memcached_servers = control1:11211
+auth_type = password
+project_domain_id = default
+user_domain_id = default
+project_name = service
+username = cinder
+password = hujin666
+
+
+
+[lvm]
+volume_driver = cinder.volume.drivers.lvm.LVMVolumeDriver
+volume_group = cinder-volumes
+iscsi_protocol = iscsi
+iscsi_helper = lioadm
+
+[oslo_concurrency]
+# ...
+lock_path = /var/lib/cinder/tmp
+```
+
+`systemctl enable openstack-cinder-volume.service target.service`
+`systemctl start openstack-cinder-volume.service target.service`
+
+### 验证
+
+`. admin-openrc`
+
+`openstack volume service list`
+
+
+## 在control1中
+
+`mysql -u root -p`
+
+`CREATE DATABASE cinder;`
+
+`GRANT ALL PRIVILEGES ON cinder.* TO 'cinder'@'localhost' IDENTIFIED BY 'hujin666';`
+
+`GRANT ALL PRIVILEGES ON cinder.* TO 'cinder'@'%' IDENTIFIED BY 'hujin666';`
+
+`. admin-openrc`
+
+`openstack user create --domain default --password-prompt cinder`
+
+`openstack role add --project service --user cinder admin`
+
+`openstack service create --name cinderv2 --description "OpenStack Block Storage" volumev2`
+
+`openstack service create --name cinderv3 --description "OpenStack Block Storage" volumev3`
+
+`openstack endpoint create --region RegionOne volumev2 public http://control1:8776/v2/%\(project_id\)s`
+
+
+`openstack endpoint create --region RegionOne volumev2 internal http://control1:8776/v2/%\(project_id\)s`
+
+`openstack endpoint create --region RegionOne volumev2 admin http://control1:8776/v2/%\(project_id\)s`
+
+
+`openstack endpoint create --region RegionOne volumev3 public http://control1:8776/v3/%\(project_id\)s`
+
+`openstack endpoint create --region RegionOne volumev3 internal http://control1:8776/v3/%\(project_id\)s`
+
+
+`openstack endpoint create --region RegionOne volumev3 admin http://control1:8776/v3/%\(project_id\)s`
+
+
+`yum install openstack-cinder`
+
+`vim /etc/cinder/cinder.conf`
+
+```
+[database]
+# ...
+connection = mysql+pymysql://cinder:hujin666@control1/cinder
+
+[DEFAULT]
+# ...
+transport_url = rabbit://openstack:hujin666@control1
+auth_strategy = keystone
+my_ip = 192.168.80.246
+
+[keystone_authtoken]
+# ...
+auth_uri = http://control1:5000
+auth_url = http://control1:5000
+memcached_servers = control1:11211
+auth_type = password
+project_domain_id = default
+user_domain_id = default
+project_name = service
+username = cinder
+password = hujin666
+
+[oslo_concurrency]
+lock_path = /var/lib/cinder/tmp
+```
+
+`su -s /bin/sh -c "cinder-manage db sync" cinder`
+
+`vim /etc/nova/nova.conf`
+
+```
+[cinder]
+os_region_name = RegionOne
+```
+
+`systemctl restart openstack-nova-api.service`
+
+`systemctl enable openstack-cinder-api.service openstack-cinder-scheduler.service`
+
+`systemctl start openstack-cinder-api.service openstack-cinder-scheduler.service`
+
+验证
+
+`. admin-openrc`
+
+`openstack volume service list`
+
+cinder-scheduler | controller | nova | enabled | up
+cinder-volume    | block@lvm  | nova | enabled | up 
