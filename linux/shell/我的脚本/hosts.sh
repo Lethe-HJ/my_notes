@@ -1,20 +1,22 @@
 #!/bin/bash
-hostnamepath="./hosts"
-network="192.168.1"
-begin=30
-end=35
-host_str="cat $hostnamepath"
+ips=(10.10.16.55
+10.10.16.56
+10.10.16.58
+10.10.16.59
+10.10.16.94
+)
 
-ips=$(seq $begin $end)
-
-for i in $ips;
+for i in ${ips[@]};
 do
-    ip="$network.$i"
-    ssh root@$ip "echo $host_str >> /etc/hostsname"
-    if [ $? = 0 ];
-        then
-            echo "[success] add hostsname of $ip success"
-        else
-            echo "[failure] add hostsname of $ip failure"
+    ip="$i"
+    # 添加公钥
+    echo "--------------------------------------------------------------------"
+    echo "[消息]：正在拷贝"
+    scp /etc/hosts root@$ip:/etc/hosts
+    if test $? -eq 0
+    then
+            echo "[消息]：拷贝到"${ip}"完成。"
+    else
+            echo "[消息]：拷贝到"${ip}"失败。"
     fi
 done

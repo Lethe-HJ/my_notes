@@ -1,70 +1,4 @@
 
-## 节点规划
-
-192.168.80.246 control1
-192.168.80.247 compute1
-
-## 网络配置
-`[root@controller01 /]# cat /etc/sysconfig/network-scripts/ifcfg-ens3`
-
-    TYPE="Ethernet"
-    PROXY_METHOD="none"
-    BROWSER_ONLY="no"
-    BOOTPROTO=static
-    DEFROUTE="yes"
-    IPV4_FAILURE_FATAL="yes"
-    IPV6INIT="yes"
-    IPV6_AUTOCONF="yes"
-    IPV6_DEFROUTE="yes"
-    IPV6_FAILURE_FATAL="no"
-    IPV6_ADDR_GEN_MODE="stable-privacy"
-    NAME="ens3"
-    UUID="e9b5f9c7-3a0a-49b6-a4cc-709ca88f414c"
-    DEVICE="ens3"
-    ONBOOT="yes"
-    IPADDR="192.168.80.246"
-    PREFIX="16"
-    GATEWAY="192.168.1.254"
-    IPV6_PRIVACY="no"
-    DNS1="223.5.5.5"
-
-`[root@controller01 /]# cat /etc/sysconfig/network-scripts/ifcfg-ens8`
-
-```
-TYPE=Ethernet
-PROXY_METHOD=none
-BROWSER_ONLY=no
-BOOTPROTO=static
-DEFROUTE=yes
-IPV4_FAILURE_FATAL=yes
-IPV6INIT=yes
-IPV6_AUTOCONF=yes
-IPV6_DEFROUTE=yes
-IPV6_FAILURE_FATAL=no
-IPV6_ADDR_GEN_MODE=stable-privacy
-NAME=ens8
-DEVICE=ens8
-ONBOOT=yes
-IPADDR=0.0.0.0
-```
-
-compute1进行类似配置(但 ifcfg-ens3中IPADDR="192.168.80.246")
-
-## hosts配置
-
-`[root@controller01 ~]# cat /etc/hosts`
-
-    127.0.0.1 localhost
-    192.168.80.246 control1
-    192.168.80.247 compute1
-
-拷贝到compute01节点
-
-`scp /etc/hosts root@compute01:/etc/hosts`
-
-## 配置免密登录
-
-
 ## 启用OpenStack存储库
 
 `$ yum install centos-release-openstack-queens`
@@ -84,7 +18,7 @@ compute1进行类似配置(但 ifcfg-ens3中IPADDR="192.168.80.246")
 `$ vim /etc/my.cnf.d/openstack.cnf`
 
     [mysqld]
-    bind-address = 192.168.1.30
+    bind-address = 192.168.80.248
 
     default-storage-engine = innodb
     innodb_file_per_table = on
@@ -126,13 +60,13 @@ vim /etc/sysconfig/memcached
 ```
 #[Member]
 ETCD_DATA_DIR="/var/lib/etcd/default.etcd"
-ETCD_LISTEN_PEER_URLS="http://192.168.80.246:2380"
-ETCD_LISTEN_CLIENT_URLS="http://192.168.80.246:2379"
-ETCD_NAME="controller"
+ETCD_LISTEN_PEER_URLS="http://192.168.80.248:2380"
+ETCD_LISTEN_CLIENT_URLS="http://192.168.80.248:2379"
+ETCD_NAME="control1"
 #[Clustering]
-ETCD_INITIAL_ADVERTISE_PEER_URLS="http://192.168.80.246:2380"
-ETCD_ADVERTISE_CLIENT_URLS="http://192.168.80.246:2379"
-ETCD_INITIAL_CLUSTER="controller=http://192.168.80.246:2380"
+ETCD_INITIAL_ADVERTISE_PEER_URLS="http://192.168.80.248:2380"
+ETCD_ADVERTISE_CLIENT_URLS="http://192.168.80.248:2379"
+ETCD_INITIAL_CLUSTER="controller=http://192.168.80.248:2380"
 ETCD_INITIAL_CLUSTER_TOKEN="etcd-cluster-01"
 ETCD_INITIAL_CLUSTER_STATE="new"
 ```
@@ -466,7 +400,7 @@ ETCD_INITIAL_CLUSTER_STATE="new"
 # ...
 enabled_apis = osapi_compute,metadata
 transport_url = rabbit://openstack:hujin666@control1
-my_ip = 192.168.80.246
+my_ip = 192.168.80.248
 use_neutron = True
 firewall_driver = nova.virt.firewall.NoopFirewallDriver
 
@@ -553,7 +487,7 @@ openstack-nova-conductor.service openstack-nova-novncproxy.service
 ```
 
 ```
-systemctl start openstack-nova-api.service \
+systemctl restart openstack-nova-api.service \
 openstack-nova-consoleauth.service openstack-nova-scheduler.service \
 openstack-nova-conductor.service openstack-nova-novncproxy.service
 ```
@@ -568,7 +502,7 @@ openstack-nova-conductor.service openstack-nova-novncproxy.service
 # ...
 enabled_apis = osapi_compute,metadata
 transport_url = rabbit://openstack:hujin666@control1
-my_ip = 192.168.80.247
+my_ip = 192.168.80.248
 use_neutron = True
 firewall_driver = nova.virt.firewall.NoopFirewallDriver
 
@@ -735,7 +669,7 @@ extension_drivers = port_security
 
 [ml2_type_flat]
 # ...
-flat_networks = provider
+flat_networks = ens9
 
 [securitygroup]
 # ...
@@ -751,7 +685,7 @@ physical_interface_mappings = provider:ens9
 
 [vxlan]
 enable_vxlan = true
-local_ip = 192.168.7.158
+local_ip = 192.168.80.248
 l2_population = true
 
 [securitygroup]
@@ -796,7 +730,7 @@ metadata_proxy_shared_secret = hujin666
 # ...
 url = http://control1:9696
 auth_url = http://control1:35357
-auth_type = passwordn
+auth_type = password
 project_domain_name = default
 user_domain_name = default
 region_name = RegionOne
@@ -861,7 +795,7 @@ physical_interface_mappings = provider:ens9
 
 [vxlan]
 enable_vxlan = true
-local_ip = 192.168.7.191
+local_ip = 192.168.80.247
 l2_population = true
 
 [securitygroup]
@@ -977,13 +911,6 @@ password: hujin666
 
 `systemctl start lvm2-lvmetad.service`
 
-在virt-manager中给compute1加一块Disk
-然后关机（此时硬盘才会被加载）
-`fdisk -l` 查看有没有刚刚创建的硬盘(/dev/sdb)
-
-`pvcreate /dev/sdb`
-
-`vgcreate cinder-volumes /dev/sdb`
 
 `vim /etc/lvm/lvm.conf`
 
@@ -1009,7 +936,7 @@ connection = mysql+pymysql://cinder:hujin666@control1/cinder
 # ...
 transport_url = rabbit://openstack:hujin666@control1
 auth_strategy = keystone
-my_ip = 192.168.80.246
+my_ip = 192.168.80.247
 # my_ip = MANAGEMENT_INTERFACE_IP_ADDRESS
 enabled_backends = lvm
 glance_api_servers = http://control1:9292
@@ -1098,7 +1025,7 @@ connection = mysql+pymysql://cinder:hujin666@control1/cinder
 # ...
 transport_url = rabbit://openstack:hujin666@control1
 auth_strategy = keystone
-my_ip = 192.168.80.246
+my_ip = 192.168.80.248
 
 [keystone_authtoken]
 # ...
@@ -1139,3 +1066,24 @@ os_region_name = RegionOne
 
 cinder-scheduler | controller | nova | enabled | up
 cinder-volume    | block@lvm  | nova | enabled | up 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+相关命令
+删除卷
+cinder-manage service remove <Binary> <host>

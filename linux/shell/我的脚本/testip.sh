@@ -1,5 +1,6 @@
 #!/bin/bash
-
+# ping一整个网段
+#
 # $1 表示网段 $2表示测试组数
 function testip(){
     for var in {1..10};
