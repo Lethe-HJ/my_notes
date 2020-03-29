@@ -15,7 +15,7 @@
 你也可以直接拷贝 配置好的 /etc/hosts 文件为 ./hosts 然后进行修改
 EOF
 
-hostnamepath="./hosts"
+hostnamepath="./hosts.conf"
 i=1
 for line in `cat $hostnamepath`;
 do
@@ -26,8 +26,8 @@ do
         echo "操作$ip"
         echo "修改/etc/hostname: ssh root@$ip 'echo $line > /etc/hostname'"
         ssh root@$ip "echo $line > /etc/hostname"
-        echo "重启目标机器 ssh root@$ip 'reboot'"
-        ssh root@$ip "reboot"
+        echo "临时设置hostname"
+        ssh root@$ip "hostname $line"
     fi
     let "i++"
 done

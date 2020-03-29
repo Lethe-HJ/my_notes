@@ -1,5 +1,6 @@
 #!/bin/bash
-
+# ping一整个网段
+#
 # $1 表示网段 $2表示测试组数
 function testip(){
     for var in {1..10};
@@ -8,7 +9,7 @@ function testip(){
         if [ "$num" -lt 255 ];
         then
             ip=$1.$num
-            ping -c2 $ip >/dev/null 2>&1
+            ping -c 2 $ip >/dev/null 2>&1
             # echo -ne '\b\b'
             # echo "$num"
             if [ $? = 0 ];
