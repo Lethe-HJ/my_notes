@@ -125,3 +125,5 @@ gpgcheck=1
 
 
 运行 yum update 测试一下吧。
+
+yum install centos-release-openstack-queens  -y --downloadonly --downloaddir=~/package
