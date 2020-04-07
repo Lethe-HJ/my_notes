@@ -1,0 +1,1829 @@
+<!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <title>基础服务配置</title>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.10.2/dist/katex.min.css" integrity="sha384-yFRtMMDnQtDRO8rLpMIKrtPCD5jdktao2TV19YiZYWMDkUR5GQZR/NOVTdquEx1j" crossorigin="anonymous">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/Microsoft/vscode/extensions/markdown-language-features/media/markdown.css">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/Microsoft/vscode/extensions/markdown-language-features/media/highlight.css">
+        <link href="https://cdn.jsdelivr.net/npm/katex-copytex@latest/dist/katex-copytex.min.css" rel="stylesheet" type="text/css">
+        <style>
+.task-list-item { list-style-type: none; } .task-list-item-checkbox { margin-left: -20px; vertical-align: middle; }
+</style>
+        <style>
+            body {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe WPC', 'Segoe UI', 'Ubuntu', 'Droid Sans', sans-serif;
+                font-size: 14px;
+                line-height: 1.6;
+            }
+        </style>
+        
+        <script src="https://cdn.jsdelivr.net/npm/katex-copytex@latest/dist/katex-copytex.min.js"></script>
+    </head>
+    <body class="vscode-light">
+        <h2 id="%e5%9f%ba%e7%a1%80%e6%9c%8d%e5%8a%a1%e9%85%8d%e7%bd%ae">基础服务配置</h2>
+<h3 id="hosts">hosts</h3>
+<p>全部节点
+<code>[root@controller1 ~]# cat /etc/hosts</code></p>
+<pre><code><code><div>127.0.0.1 localhost
+# ceph
+172.168.100.55 node1
+172.168.100.56 node2
+172.168.100.58 node3
+172.168.100.59 node4
+172.168.100.94 node5
+# openstack node
+10.10.16.55 controller1
+10.10.16.56 controller2
+10.10.16.58 controller3
+10.10.16.59 compute1
+10.10.16.94 compute2
+#openstack vip
+10.10.16.224 controller
+</div></code></code></pre>
+<h3 id="chronyconf">chrony.conf</h3>
+<p>ntp服务节点 controller1
+<code>[root@controller1 ~]# egrep -v &quot;^$|^#&quot; /etc/chrony.conf </code></p>
+<pre><code><code><div>server ntp1.aliyun.com iburst
+driftfile /var/lib/chrony/drift
+makestep 1.0 3
+rtcsync
+allow controller2
+allow controller3
+allow compute1
+allow compute2
+logdir /var/log/chrony
+</div></code></code></pre>
+<p>ntp客户节点 除了controller1
+<code>[root@controller2 ~]# egrep -v &quot;^$|^#&quot; /etc/chrony.conf</code></p>
+<pre><code><code><div>server controller1 iburst
+driftfile /var/lib/chrony/drift
+makestep 1.0 3
+rtcsync
+logdir /var/log/chrony
+</div></code></code></pre>
+<h3 id="iptables">iptables</h3>
+<p>全部节点
+<code>[root@controller01 ~]# vim /etc/sysconfig/iptables</code></p>
+<pre><code><code><div># mariadb
+# tcp3306：服务监听端口；
+# tcp&amp;udp4567：tcp做数据同步复制，多播复制同时采用tcp与udp；
+# tcp4568：增量状态传输；
+# tcp4444：其他状态快照传输；
+# tcp9200：心跳检测
+-A INPUT -p tcp -m state --state NEW -m tcp --dport 3306 -j ACCEPT
+-A INPUT -p tcp -m state --state NEW -m tcp --dport 4444 -j ACCEPT
+-A INPUT -p tcp -m state --state NEW -m tcp --dport 4567:4568 -j ACCEPT
+-A INPUT -p udp -m state --state NEW -m udp --dport 4567 -j ACCEPT
+-A INPUT -p tcp -m state --state NEW -m tcp --dport 9200 -j ACCEPT
+
+# rabbitmq
+# tcp4369：集群邻居发现；
+# tcp5671，5672：用于AMQP 0.9.1 and 1.0 clients使用；
+# tcp5673：非rabbitmq默认使用端口，这里用作hapoxy前端监听端口，避免后端服务与haproxy在1个节点时无法启动的问题；如果使用rabbitmq本身的集群机制，则可不设置此端口；
+# tcp15672：用于http api与rabbitadmin访问，后者仅限在management plugin开启时；
+# tcp25672：用于erlang分布式节点/工具通信
+-A INPUT -p tcp -m state --state NEW -m tcp --dport 4369 -j ACCEPT
+-A INPUT -p tcp -m state --state NEW -m tcp --dport 5671:5673 -j ACCEPT
+-A INPUT -p tcp -m state --state NEW -m tcp --dport 15672:15673 -j ACCEPT
+-A INPUT -p tcp -m state --state NEW -m tcp --dport 25672 -j ACCEPT
+
+# memcached
+# tcp11211：服务监听端口；
+-A INPUT -p tcp -m state --state NEW -m tcp --dport 11211 -j ACCEPT
+
+# pcs
+# tcp2224：pcs web管理服务监听端口，可通过web新建，查看，删除资源等，端口值在/usr/lib/pcsd/ssl.rb文件中设置；
+# udp5405：中间件corosync服务集群多播通信端口
+-A INPUT -p tcp -m state --state NEW -m tcp --dport 2224 -j ACCEPT
+-A INPUT -p udp -m state --state NEW -m udp --dport 5404:5405 -j ACCEPT
+
+# haproxy
+# tcp1080：haproxy监听端口
+-A INPUT -p tcp -m state --state NEW -m tcp --dport 1080 -j ACCEPT
+
+# dashboard
+# tcp80：dashboard监听端口
+-A INPUT -p tcp -m state --state NEW -m tcp --dport 80 -j ACCEPT
+
+# keystone
+# tcp35357：admin-api端口；
+# tcp5000：public/internal-api端口
+-A INPUT -p tcp -m state --state NEW -m tcp --dport 35357 -j ACCEPT
+-A INPUT -p tcp -m state --state NEW -m tcp --dport 5000 -j ACCEPT
+
+# glance
+# tcp9191：glance-registry端口；
+# tcp9292：glance-api端口
+-A INPUT -p tcp -m state --state NEW -m tcp --dport 9191 -j ACCEPT
+-A INPUT -p tcp -m state --state NEW -m tcp --dport 9292 -j ACCEPT
+
+# nova
+# tcp8773：nova-ec2-api端口；
+# tcp8774：nova-compute-api端口；
+# tcp8775：nova-metadata-api端口；
+# tcp8778：placement-api端口；
+# tcp6080：vncproxy端口
+-A INPUT -p tcp -m state --state NEW -m tcp --dport 8773:8775 -j ACCEPT
+-A INPUT -p tcp -m state --state NEW -m tcp --dport 8778 -j ACCEPT
+-A INPUT -p tcp -m state --state NEW -m tcp --dport 6080 -j ACCEPT
+
+# cinder
+# tcp8776：cinder-api端口
+-A INPUT -p tcp -m state --state NEW -m tcp --dport 8776 -j ACCEPT
+
+# neutron
+# tcp9696：neutron-api端口；
+# udp4789：vxlan目的端口
+-A INPUT -p tcp -m state --state NEW -m tcp --dport 9696 -j ACCEPT
+-A INPUT -p udp -m state --state NEW -m udp --dport 4789 -j ACCEPT
+
+# ceph
+# tcp6789：ceph-mon端口；
+# tcp6800~7300：ceph-osd端口
+-A INPUT -p tcp -m state --state NEW -m tcp --dport 6789 -j ACCEPT
+-A INPUT -p tcp -m state --state NEW -m tcp --dport 6800:7300 -j ACCEPT
+</div></code></code></pre>
+<p>###　mariadb
+全部控制节点
+<code>[root@controller1 ~]# cat /etc/my.cnf.d/openstack.cnf</code></p>
+<pre><code><code><div>[mysqld]
+binlog_format=ROW
+bind-address = 10.10.16.55
+
+default-storage-engine = innodb
+innodb_file_per_table = on
+max_connections = 409600
+collation-server = utf8_general_ci
+character-set-server = utf8
+
+[galera]
+bind-address = 10.10.16.55
+wsrep_provider = /usr/lib64/galera/libgalera_smm.so
+#wsrep_cluster_address =&quot;gcomm://&quot;
+wsrep_cluster_address =&quot;gcomm://controller1,controller2,controller3&quot;
+wsrep_cluster_name = openstack-cluster-01
+wsrep_node_name = controller1
+wsrep_node_address = 10.10.16.55
+wsrep_on=ON
+wsrep_slave_threads=4
+wsrep_sst_method=rsync
+default_storage_engine=InnoDB
+[embedded]
+[mariadb]
+[mariadb-10.1] 
+</div></code></code></pre>
+<h3 id="clustercheck">clustercheck</h3>
+<p>全部控制节点
+<code>[root@controller1 ~]# cat /usr/bin/clustercheck</code></p>
+<pre><code class="language-shell"><div><span class="hljs-meta">#</span><span class="bash">!/bin/bash</span>
+<span class="hljs-meta">#</span><span class="bash"></span>
+<span class="hljs-meta">#</span><span class="bash"> Script to make a proxy (ie HAProxy) capable of monitoring Percona XtraDB Cluster nodes properly</span>
+<span class="hljs-meta">#</span><span class="bash"></span>
+<span class="hljs-meta">#</span><span class="bash"> Author: Olaf van Zandwijk &lt;olaf.vanzandwijk@nedap.com&gt;</span>
+<span class="hljs-meta">#</span><span class="bash"> Author: Raghavendra Prabhu &lt;raghavendra.prabhu@percona.com&gt;</span>
+<span class="hljs-meta">#</span><span class="bash"></span>
+<span class="hljs-meta">#</span><span class="bash"> Documentation and download: https://github.com/olafz/percona-clustercheck</span>
+<span class="hljs-meta">#</span><span class="bash"></span>
+<span class="hljs-meta">#</span><span class="bash"> Based on the original script from Unai Rodriguez</span>
+<span class="hljs-meta">#</span><span class="bash"></span>
+
+if [[ $1 == '-h' || $1 == '--help' ]];then
+    echo "Usage: $0 &lt;user&gt; &lt;pass&gt; &lt;available_when_donor=0|1&gt; &lt;log_file&gt; &lt;available_when_readonly=0|1&gt; &lt;defaults_extra_file&gt;"
+    exit
+fi
+<span class="hljs-meta">
+#</span><span class="bash"> <span class="hljs-keyword">if</span> the disabled file is present, <span class="hljs-built_in">return</span> 503. This allows</span>
+<span class="hljs-meta">#</span><span class="bash"> admins to manually remove a node from a cluster easily.</span>
+if [ -e "/var/tmp/clustercheck.disabled" ]; then
+    # Shell return-code is 1
+    echo -en "HTTP/1.1 503 Service Unavailable\r\n"
+    echo -en "Content-Type: text/plain\r\n"
+    echo -en "Connection: close\r\n"
+    echo -en "Content-Length: 51\r\n"
+    echo -en "\r\n"
+    echo -en "Percona XtraDB Cluster Node is manually disabled.\r\n"
+    sleep 0.1
+    exit 1
+fi
+
+set -e
+
+if [ -f /etc/sysconfig/clustercheck ]; then
+        . /etc/sysconfig/clustercheck
+fi
+<span class="hljs-meta">
+#</span><span class="bash">MYSQL_USERNAME=<span class="hljs-string">"<span class="hljs-variable">${MYSQL_USERNAME:=-clustercheckuser}</span>"</span></span>
+<span class="hljs-meta">#</span><span class="bash">MYSQL_PASSWORD=<span class="hljs-string">"<span class="hljs-variable">${MYSQL_PASSWORD-clustercheckpassword!}</span>"</span></span>
+MYSQL_USERNAME="${MYSQL_USERNAME:=clustercheckuser}"
+MYSQL_PASSWORD="${MYSQL_PASSWORD:=clustercheckpassword!}"
+
+AVAILABLE_WHEN_DONOR=${AVAILABLE_WHEN_DONOR:-0}
+ERR_FILE="${ERR_FILE:-/dev/null}"
+AVAILABLE_WHEN_READONLY=${AVAILABLE_WHEN_READONLY:-1}
+DEFAULTS_EXTRA_FILE=${DEFAULTS_EXTRA_FILE:-/etc/my.cnf}
+<span class="hljs-meta">
+#</span><span class="bash">Timeout exists <span class="hljs-keyword">for</span> instances <span class="hljs-built_in">where</span> mysqld may be hung</span>
+TIMEOUT=10
+
+EXTRA_ARGS=""
+if [[ -n "$MYSQL_USERNAME" ]]; then
+    EXTRA_ARGS="$EXTRA_ARGS --user=${MYSQL_USERNAME}"
+fi
+if [[ -n "$MYSQL_PASSWORD" ]]; then
+    EXTRA_ARGS="$EXTRA_ARGS --password=${MYSQL_PASSWORD}"
+fi
+if [[ -r $DEFAULTS_EXTRA_FILE ]];then
+    MYSQL_CMDLINE="mysql --defaults-extra-file=$DEFAULTS_EXTRA_FILE -nNE --connect-timeout=$TIMEOUT \
+                    ${EXTRA_ARGS}"
+else
+    MYSQL_CMDLINE="mysql -nNE --connect-timeout=$TIMEOUT ${EXTRA_ARGS}"
+fi
+<span class="hljs-meta">#</span><span class="bash"></span>
+<span class="hljs-meta">#</span><span class="bash"> Perform the query to check the wsrep_local_state</span>
+<span class="hljs-meta">#</span><span class="bash"></span>
+echo $MYSQL_CMDLINE
+WSREP_STATUS=$($MYSQL_CMDLINE -e "SHOW STATUS LIKE 'wsrep_local_state';" \
+    2&gt;${ERR_FILE} | tail -1 2&gt;&gt;${ERR_FILE})
+
+if [[ "${WSREP_STATUS}" == "4" ]] || [[ "${WSREP_STATUS}" == "2" &amp;&amp; ${AVAILABLE_WHEN_DONOR} == 1 ]]
+then
+    # Check only when set to 0 to avoid latency in response.
+    if [[ $AVAILABLE_WHEN_READONLY -eq 0 ]];then
+        READ_ONLY=$($MYSQL_CMDLINE -e "SHOW GLOBAL VARIABLES LIKE 'read_only';" \
+                    2&gt;${ERR_FILE} | tail -1 2&gt;&gt;${ERR_FILE})
+
+        if [[ "${READ_ONLY}" == "ON" ]];then
+            # Percona XtraDB Cluster node local state is 'Synced', but it is in
+            # read-only mode. The variable AVAILABLE_WHEN_READONLY is set to 0.
+            # =&gt; return HTTP 503
+            # Shell return-code is 1
+            echo -en "HTTP/1.1 503 Service Unavailable\r\n"
+            echo -en "Content-Type: text/plain\r\n"
+            echo -en "Connection: close\r\n"
+            echo -en "Content-Length: 43\r\n"
+            echo -en "\r\n"
+            echo -en "Percona XtraDB Cluster Node is read-only.\r\n"
+            sleep 0.1
+            exit 1
+        fi
+    fi
+    # Percona XtraDB Cluster node local state is 'Synced' =&gt; return HTTP 200
+    # Shell return-code is 0
+    echo -en "HTTP/1.1 200 OK\r\n"
+    echo -en "Content-Type: text/plain\r\n"
+    echo -en "Connection: close\r\n"
+    echo -en "Content-Length: 40\r\n"
+    echo -en "\r\n"
+    echo -en "Percona XtraDB Cluster Node is synced.\r\n"
+    sleep 0.1
+    exit 0
+else
+    # Percona XtraDB Cluster node local state is not 'Synced' =&gt; return HTTP 503
+    # Shell return-code is 1
+    echo -en "HTTP/1.1 503 Service Unavailable\r\n"
+    echo -en "Content-Type: text/plain\r\n"
+    echo -en "Connection: close\r\n"
+    echo -en "Content-Length: 44\r\n"
+    echo -en "\r\n"
+    echo -en "Percona XtraDB Cluster Node is not synced.\r\n"
+    sleep 0.1
+    exit 1
+fi
+</div></code></pre>
+<h3 id="xinetd">xinetd</h3>
+<p>全部控制节点
+<code>[root@controller01 ~]# vim /etc/xinetd.d/mysqlchk</code></p>
+<pre><code><code><div># default: on
+# description: mysqlchk
+service mysqlchk
+{
+   port = 9200
+   disable = no
+   socket_type = stream
+   protocol = tcp
+   wait = no
+   user = root
+   group = root
+   groups = yes
+   server = /usr/bin/clustercheck
+   type = UNLISTED
+   per_source = UNLIMITED
+   log_on_success =
+   log_on_failure = HOST
+   flags = REUSE
+}
+</div></code></code></pre>
+<h3 id="memecached">memecached</h3>
+<p>全部控制节点
+<code>[root@controller01 ~]# sed -i 's|127.0.0.1,::1|0.0.0.0|g' /etc/sysconfig/memcached</code></p>
+<h3 id="haproxy">haproxy</h3>
+<p>全部控制节点
+<code>[root@controller1 ~]# grep -v ^# /etc/haproxy/haproxy.cfg</code></p>
+<pre><code><code><div>global
+    # to have these messages end up in /var/log/haproxy.log you will
+    # need to:
+    #
+    # 1) configure syslog to accept network log events.  This is done
+    #    by adding the '-r' option to the SYSLOGD_OPTIONS in
+    #    /etc/sysconfig/syslog
+    #
+    # 2) configure local2 events to go to the /var/log/haproxy.log
+    #   file. A line like the following can be added to
+    #   /etc/sysconfig/syslog
+    #
+    #    local2.*                       /var/log/haproxy.log
+    #
+    log         127.0.0.1 local2
+
+    chroot      /var/lib/haproxy
+    pidfile     /var/run/haproxy.pid
+    maxconn     4000
+    user        haproxy
+    group       haproxy
+    daemon
+
+    # turn on stats unix socket
+    stats socket /var/lib/haproxy/stats
+
+defaults
+    mode                    http
+    log                     global
+    option                  httplog
+    option                  dontlognull
+    option http-server-close
+    option forwardfor       except 127.0.0.0/8
+    option                  redispatch
+    retries                 3
+    timeout http-request    10s
+    timeout queue           1m
+    timeout connect         10s
+    timeout client          1m
+    timeout server          1m
+    timeout http-keep-alive 10s
+    timeout check           10s
+    maxconn                 3000
+
+
+
+listen stats
+  bind 0.0.0.0:1081
+  mode http
+  stats enable
+  stats uri /
+  stats realm OpenStack\ Haproxy
+  stats auth admin:admin
+  stats  refresh 30s
+  stats  show-node
+  stats  show-legends
+  stats  hide-version
+
+listen dashboard_cluster
+  bind 10.10.16.224:80
+  balance  source
+  option  tcpka
+  option  httpchk
+  option  tcplog
+  server controller1 10.10.16.55:80 check inter 2000 rise 2 fall 5
+  server controller2 10.10.16.56:80 check inter 2000 rise 2 fall 5
+  server controller3 10.10.16.58:80 check inter 2000 rise 2 fall 5
+
+listen galera_cluster
+  bind 10.10.16.224:3306
+  balance  source
+  mode    tcp
+  server controller1 10.10.16.55:3306 check inter 2000 rise 2 fall 5
+  server controller2 10.10.16.56:3306 backup check inter 2000 rise 2 fall 5
+  server controller3 10.10.16.58:3306 backup check inter 2000 rise 2 fall 5
+
+ listen glance_api_cluster
+  bind 10.10.16.224:9292
+  balance  source
+  option  tcpka
+  option  httpchk
+  option  tcplog
+  server controller1 10.10.16.55:9292 check inter 2000 rise 2 fall 5
+  server controller2 10.10.16.56:9292 check inter 2000 rise 2 fall 5
+  server controller3 10.10.16.58:9292 check inter 2000 rise 2 fall 5
+
+listen glance_registry_cluster
+  bind 10.10.16.224:9192
+  balance  source
+  option  tcpka
+  option  tcplog
+  server controller1 10.10.16.55:9192 check inter 2000 rise 2 fall 5
+  server controller2 10.10.16.56:9192 check inter 2000 rise 2 fall 5
+  server controller3 10.10.16.58:9192 check inter 2000 rise 2 fall 5
+
+ listen keystone_admin_cluster
+  bind 10.10.16.224:35357
+  balance  source
+  option  tcpka
+  option  httpchk
+  option  tcplog
+  server controller1 10.10.16.55:35357 check inter 2000 rise 2 fall 5
+  server controller2 10.10.16.56:35357 check inter 2000 rise 2 fall 5
+  server controller3 10.10.16.58:35357 check inter 2000 rise 2 fall 5
+
+ listen keystone_public_cluster
+  bind 10.10.16.224:5000
+  balance  source
+  option  tcpka
+  option  httpchk
+  option  tcplog
+  server controller1 10.10.16.55:5000 check inter 2000 rise 2 fall 5
+  server controller2 10.10.16.56:5000 check inter 2000 rise 2 fall 5
+  server controller3 10.10.16.58:5000 check inter 2000 rise 2 fall 5
+
+ listen nova_ec2_api_cluster
+  bind 10.10.16.224:8773
+  balance  source
+  option  tcpka
+  option  tcplog
+  server controller1 10.10.16.55:8773 check inter 2000 rise 2 fall 5
+  server controller2 10.10.16.56:8773 check inter 2000 rise 2 fall 5
+  server controller3 10.10.16.58:8773 check inter 2000 rise 2 fall 5
+
+ listen nova_compute_api_cluster
+  bind 10.10.16.224:8774
+  balance  source
+  option  tcpka
+  option  httpchk
+  option  tcplog
+  server controller1 10.10.16.55:8774 check inter 2000 rise 2 fall 5
+  server controller2 10.10.16.56:8774 check inter 2000 rise 2 fall 5
+  server controller3 10.10.16.58:8774 check inter 2000 rise 2 fall 5
+
+ listen nova_placement_cluster
+  bind 10.10.16.224:8778
+  balance  source
+  option  tcpka
+  option  tcplog
+  server controller1 10.10.16.55:8778 check inter 2000 rise 2 fall 5
+  server controller2 10.10.16.56:8778 check inter 2000 rise 2 fall 5
+  server controller3 10.10.16.58:8778 check inter 2000 rise 2 fall 5
+
+ listen nova_metadata_api_cluster
+  bind 10.10.16.224:8775
+  balance  source
+  option  tcpka
+  option  tcplog
+  server controller1 10.10.16.55:8775 check inter 2000 rise 2 fall 5
+  server controller2 10.10.16.56:8775 check inter 2000 rise 2 fall 5
+  server controller3 10.10.16.58:8775 check inter 2000 rise 2 fall 5
+
+ listen nova_vncproxy_cluster
+  bind 10.10.16.224:6080
+  balance  source
+  option  tcpka
+  option  tcplog
+  server controller1 10.10.16.55:6080 check inter 2000 rise 2 fall 5
+  server controller2 10.10.16.56:6080 check inter 2000 rise 2 fall 5
+  server controller3 10.10.16.58:6080 check inter 2000 rise 2 fall 5
+
+ listen neutron_api_cluster
+  bind 10.10.16.224:9696
+  balance  source
+  option  tcpka
+  option  httpchk
+  option  tcplog
+  server controller1 10.10.16.55:9696 check inter 2000 rise 2 fall 5
+  server controller2 10.10.16.56:9696 check inter 2000 rise 2 fall 5
+  server controller3 10.10.16.58:9696 check inter 2000 rise 2 fall 5
+
+ listen cinder_api_cluster
+  bind 10.10.16.224:8776
+  balance  source
+  option  tcpka
+  option  httpchk
+  option  tcplog
+  server controller1 10.10.16.55:8776 check inter 2000 rise 2 fall 5
+  server controller2 10.10.16.56:8776 check inter 2000 rise 2 fall 5
+  server controller3 10.10.16.58:8776 check inter 2000 rise 2 fall 5
+
+</div></code></code></pre>
+<h3 id="syctcl">syctcl</h3>
+<p>全部节点
+<code>[root@controller1 ~]# cat /etc/sysctl.conf</code></p>
+<pre><code><code><div>net.ipv4.ip_forward=1
+net.ipv4.ip_nonlocal_bind=1
+net.ipv4.conf.all.rp_filter=0
+net.ipv4.conf.default.rp_filter=0
+net.bridge.bridge-nf-call-arptables = 0
+net.bridge.bridge-nf-call-ip6tables = 1
+net.bridge.bridge-nf-call-iptables = 1
+net.ipv4.tcp_syncookies=1
+net.ipv4.ip_local_port_range=1024 65535
+net.ipv4.tcp_fin_timeout=30
+net.ipv4.tcp_timestamps=1
+net.ipv4.tcp_tw_recycle=0
+net.ipv4.tcp_tw_reuse=1
+net.ipv4.tcp_max_tw_buckets=262144
+net.ipv4.tcp_max_orphans=3276800
+net.ipv4.tcp_max_syn_backlog=819200
+net.ipv4.tcp_keepalive_intvl=30
+net.ipv4.tcp_keepalive_probes=3
+net.ipv4.tcp_keepalive_time=1200
+net.netfilter.nf_conntrack_tcp_timeout_established=600
+net.netfilter.nf_conntrack_max=655350
+net.core.netdev_max_backlog=500000
+net.core.somaxconn=65535
+net.core.rmem_default=83886080
+net.core.wmem_default=83886080
+net.core.rmem_max=167772160
+net.core.wmem_max=167772160
+net.ipv4.tcp_mem=94500000 915000000 927000000
+net.ipv4.tcp_rmem=4096 87380 16777216
+net.ipv4.tcp_wmem=4096 16384 16777216
+net.ipv4.tcp_thin_dupack=1
+net.ipv4.tcp_thin_linear_timeouts=1
+net.unix.max_dgram_qlen=3000
+kernel.panic=1
+kernel.core_pattern=core_%e
+kernel.sysrq=0
+kernel.msgmax=65535
+kernel.msgmnb=65535
+kernel.shmmax=30923764530
+kernel.shmall=7549746
+kernel.watchdog_thresh = 30
+vm.panic_on_oom=1
+vm.min_free_kbytes=1048576
+vm.swappiness=20
+fs.inotify.max_user_watches=8192000
+fs.aio-max-nr=1048576
+fs.file-max=1048575
+</div></code></code></pre>
+<h2 id="keystone">keystone</h2>
+<h3 id="controller-nodes">controller nodes</h3>
+<h4 id="keystoneconf">keystone.conf</h4>
+<p>全部控制节点</p>
+<p><code>[root@controller1 ~]# egrep -v &quot;^$|^#&quot; /etc/keystone/keystone.conf</code></p>
+<pre><code><code><div>[DEFAULT]
+debug = true 
+log_file = /var/log/keystone/keystone1.log
+[application_credential]
+[assignment]
+[auth]
+[cache]
+backend = oslo_cache.memcache_pool
+enabled = true
+memcache_servers = controller1:11211,controller2:11211,controller3:11211
+[catalog]
+[cors]
+[credential]
+[database]
+connection = mysql+pymysql://keystone:pcl123123@controller/keystone
+[domain_config]
+[endpoint_filter]
+[endpoint_policy]
+[eventlet_server]
+[federation]
+[fernet_tokens]
+[healthcheck]
+[identity]
+[identity_mapping]
+[ldap]
+[matchmaker_redis]
+[memcache]
+[oauth1]
+[oslo_messaging_amqp]
+[oslo_messaging_kafka]
+[oslo_messaging_notifications]
+[oslo_messaging_rabbit]
+[oslo_messaging_zmq]
+[oslo_middleware]
+[oslo_policy]
+[paste_deploy]
+[policy]
+[profiler]
+[resource]
+[revoke]
+[role]
+[saml]
+[security_compliance]
+[shadow_users]
+[signing]
+[token]
+provider = fernet
+[tokenless_auth]
+[trust]
+[unified_limit]
+</div></code></code></pre>
+<h4 id="httpdconf">httpd.conf</h4>
+<p>全部控制节点</p>
+<p><code>[root@controller1 ~]# egrep -v &quot;^$|^#&quot; /etc/httpd/conf/httpd.conf</code></p>
+<pre><code><code><div>ServerRoot &quot;/etc/httpd&quot;
+Listen 10.10.16.55:80
+Include conf.modules.d/*.conf
+User apache
+Group apache
+ServerAdmin root@localhost
+ServerName controller1
+&lt;Directory /&gt;
+    AllowOverride none
+    Require all denied
+&lt;/Directory&gt;
+DocumentRoot &quot;/var/www/html&quot;
+&lt;Directory &quot;/var/www&quot;&gt;
+    AllowOverride None
+    # Allow open access:
+    Require all granted
+&lt;/Directory&gt;
+&lt;Directory &quot;/var/www/html&quot;&gt;
+    Require all granted
+&lt;/Directory&gt;
+&lt;IfModule dir_module&gt;
+    DirectoryIndex index.html
+&lt;/IfModule&gt;
+&lt;Files &quot;.ht*&quot;&gt;
+    Require all denied
+&lt;/Files&gt;
+ErrorLog &quot;logs/error_log&quot;
+LogLevel warn
+&lt;IfModule log_config_module&gt;
+    LogFormat &quot;%h %l %u %t \&quot;%r\&quot; %&gt;s %b \&quot;%{Referer}i\&quot; \&quot;%{User-Agent}i\&quot;&quot; combined
+    LogFormat &quot;%h %l %u %t \&quot;%r\&quot; %&gt;s %b&quot; common
+    &lt;IfModule logio_module&gt;
+      # You need to enable mod_logio.c to use %I and %O
+      LogFormat &quot;%h %l %u %t \&quot;%r\&quot; %&gt;s %b \&quot;%{Referer}i\&quot; \&quot;%{User-Agent}i\&quot; %I %O&quot; combinedio
+    &lt;/IfModule&gt;
+    #
+    # The location and format of the access logfile (Common Logfile Format).
+    # If you do not define any access logfiles within a &lt;VirtualHost&gt;
+    # container, they will be logged here.  Contrariwise, if you *do*
+    # define per-&lt;VirtualHost&gt; access logfiles, transactions will be
+    # logged therein and *not* in this file.
+    #
+    #CustomLog &quot;logs/access_log&quot; common
+    #
+    # If you prefer a logfile with access, agent, and referer information
+    # (Combined Logfile Format) you can use the following directive.
+    #
+    CustomLog &quot;logs/access_log&quot; combined
+&lt;/IfModule&gt;
+&lt;IfModule alias_module&gt;
+    #
+    # Redirect: Allows you to tell clients about documents that used to 
+    # exist in your server's namespace, but do not anymore. The client 
+    # will make a new request for the document at its new location.
+    # Example:
+    # Redirect permanent /foo http://www.example.com/bar
+    #
+    # Alias: Maps web paths into filesystem paths and is used to
+    # access content that does not live under the DocumentRoot.
+    # Example:
+    # Alias /webpath /full/filesystem/path
+    #
+    # If you include a trailing / on /webpath then the server will
+    # require it to be present in the URL.  You will also likely
+    # need to provide a &lt;Directory&gt; section to allow access to
+    # the filesystem path.
+    #
+    # ScriptAlias: This controls which directories contain server scripts. 
+    # ScriptAliases are essentially the same as Aliases, except that
+    # documents in the target directory are treated as applications and
+    # run by the server when requested rather than as documents sent to the
+    # client.  The same rules about trailing &quot;/&quot; apply to ScriptAlias
+    # directives as to Alias.
+    #
+    ScriptAlias /cgi-bin/ &quot;/var/www/cgi-bin/&quot;
+&lt;/IfModule&gt;
+&lt;Directory &quot;/var/www/cgi-bin&quot;&gt;
+    AllowOverride None
+    Options None
+    Require all granted
+&lt;/Directory&gt;
+&lt;IfModule mime_module&gt;
+    #
+    # TypesConfig points to the file containing the list of mappings from
+    # filename extension to MIME-type.
+    #
+    TypesConfig /etc/mime.types
+    #
+    # AddType allows you to add to or override the MIME configuration
+    # file specified in TypesConfig for specific file types.
+    #
+    #AddType application/x-gzip .tgz
+    #
+    # AddEncoding allows you to have certain browsers uncompress
+    # information on the fly. Note: Not all browsers support this.
+    #
+    #AddEncoding x-compress .Z
+    #AddEncoding x-gzip .gz .tgz
+    #
+    # If the AddEncoding directives above are commented-out, then you
+    # probably should define those extensions to indicate media types:
+    #
+    AddType application/x-compress .Z
+    AddType application/x-gzip .gz .tgz
+    #
+    # AddHandler allows you to map certain file extensions to &quot;handlers&quot;:
+    # actions unrelated to filetype. These can be either built into the server
+    # or added with the Action directive (see below)
+    #
+    # To use CGI scripts outside of ScriptAliased directories:
+    # (You will also need to add &quot;ExecCGI&quot; to the &quot;Options&quot; directive.)
+    #
+    #AddHandler cgi-script .cgi
+    # For type maps (negotiated resources):
+    #AddHandler type-map var
+    #
+    # Filters allow you to process content before it is sent to the client.
+    #
+    # To parse .shtml files for server-side includes (SSI):
+    # (You will also need to add &quot;Includes&quot; to the &quot;Options&quot; directive.)
+    #
+    AddType text/html .shtml
+    AddOutputFilter INCLUDES .shtml
+&lt;/IfModule&gt;
+AddDefaultCharset UTF-8
+&lt;IfModule mime_magic_module&gt;
+    #
+    # The mod_mime_magic module allows the server to use various hints from the
+    # contents of the file itself to determine its type.  The MIMEMagicFile
+    # directive tells the module where the hint definitions are located.
+    #
+    MIMEMagicFile conf/magic
+&lt;/IfModule&gt;
+EnableSendfile on
+IncludeOptional conf.d/*.conf
+</div></code></code></pre>
+<h4 id="wsgi-keystone">wsgi-keystone</h4>
+<p>全部控制节点</p>
+<p><code>[root@controller1 ~]# egrep -v &quot;^$|^#&quot; /etc/httpd/conf.d/wsgi-keystone.conf</code></p>
+<pre><code><code><div>Listen 10.10.16.55:5000
+Listen 10.10.16.55:35357
+&lt;VirtualHost 10.10.16.55:5000&gt;
+    WSGIDaemonProcess keystone-public processes=5 threads=1 user=keystone group=keystone display-name=%{GROUP}
+    WSGIProcessGroup keystone-public
+    WSGIScriptAlias / /usr/bin/keystone-wsgi-public
+    WSGIApplicationGroup %{GLOBAL}
+    WSGIPassAuthorization On
+    LimitRequestBody 114688
+    &lt;IfVersion &gt;= 2.4&gt;
+      ErrorLogFormat &quot;%{cu}t %M&quot;
+    &lt;/IfVersion&gt;
+    ErrorLog /var/log/httpd/keystone.log
+    CustomLog /var/log/httpd/keystone_access.log combined
+    &lt;Directory /usr/bin&gt;
+        &lt;IfVersion &gt;= 2.4&gt;
+            Require all granted
+        &lt;/IfVersion&gt;
+        &lt;IfVersion &lt; 2.4&gt;
+            Order allow,deny
+            Allow from all
+        &lt;/IfVersion&gt;
+    &lt;/Directory&gt;
+&lt;/VirtualHost&gt;
+&lt;VirtualHost 10.10.16.55:35357&gt;
+    WSGIDaemonProcess keystone-admin processes=5 threads=1 user=keystone group=keystone display-name=%{GROUP}
+    WSGIProcessGroup keystone-admin
+    WSGIScriptAlias / /usr/bin/keystone-wsgi-admin
+    WSGIApplicationGroup %{GLOBAL}
+    WSGIPassAuthorization On
+    LimitRequestBody 114688
+    &lt;IfVersion &gt;= 2.4&gt;
+      ErrorLogFormat &quot;%{cu}t %M&quot;
+    &lt;/IfVersion&gt;
+    ErrorLog /var/log/httpd/keystone.log
+    CustomLog /var/log/httpd/keystone_access.log combined
+    &lt;Directory /usr/bin&gt;
+        &lt;IfVersion &gt;= 2.4&gt;
+            Require all granted
+        &lt;/IfVersion&gt;
+        &lt;IfVersion &lt; 2.4&gt;
+            Order allow,deny
+            Allow from all
+        &lt;/IfVersion&gt;
+    &lt;/Directory&gt;
+&lt;/VirtualHost&gt;
+Alias /identity /usr/bin/keystone-wsgi-public
+&lt;Location /identity&gt;
+    SetHandler wsgi-script
+    Options +ExecCGI
+    WSGIProcessGroup keystone-public
+    WSGIApplicationGroup %{GLOBAL}
+    WSGIPassAuthorization On
+&lt;/Location&gt;
+Alias /identity_admin /usr/bin/keystone-wsgi-admin
+&lt;Location /identity_admin&gt;
+    SetHandler wsgi-script
+    Options +ExecCGI
+    WSGIProcessGroup keystone-admin
+    WSGIApplicationGroup %{GLOBAL}
+    WSGIPassAuthorization On
+&lt;/Location&gt;
+</div></code></code></pre>
+<h2 id="glance">glance</h2>
+<h3 id="controller-nodes-1">controller nodes</h3>
+<h4 id="glance-apiconf">glance-api.conf</h4>
+<p>全部控制节点
+<code>[root@controller1 ~]# egrep -v &quot;^$|^#&quot; /etc/glance/glance-api.conf</code></p>
+<pre><code><code><div>[DEFAULT]
+show_image_direct_url = True
+enable_v1_api = false
+bind_host = 10.10.16.55
+[cors]
+[database]
+connection = mysql+pymysql://glance:pcl123123@controller/glance
+[glance_store]
+stores = rbd
+default_store = rbd
+rbd_store_pool = images
+rbd_store_user = glance
+rbd_store_ceph_conf = /etc/ceph/ceph.conf
+[image_format]
+[keystone_authtoken]
+auth_uri = http://controller:5000
+auth_url = http://controller:35357
+memcached_servers = controller1:11211,controller2:11211,controller3:11211
+auth_type = password
+project_domain_name = default
+user_domain_name = default
+project_name = service
+username = glance
+password = pcl123123
+[matchmaker_redis]
+[oslo_concurrency]
+[oslo_messaging_amqp]
+[oslo_messaging_kafka]
+[oslo_messaging_notifications]
+[oslo_messaging_rabbit]
+[oslo_messaging_zmq]
+[oslo_middleware]
+[oslo_policy]
+[paste_deploy]
+flavor = keystone
+[profiler]
+[store_type_location_strategy]
+[task]
+[taskflow_executor]
+</div></code></code></pre>
+<h2 id="nova">nova</h2>
+<h3 id="controller-nodes-2">controller nodes</h3>
+<h4 id="novaconf">nova.conf</h4>
+<p>全部控制节点</p>
+<p><code>[root@controller1 ~]# egrep -v &quot;^$|^#&quot; /etc/nova/nova.conf</code></p>
+<pre><code><code><div>[DEFAULT]
+vcpu_pin_set=32-$
+cpu_allocation_ratio=1.0
+ram_allocation_ratio=1.0
+disk_allocation_ratio=1.0
+reserved_host_memory_mb=65536
+my_ip=10.10.16.55
+use_neutron=true
+firewall_driver=nova.virt.firewall.NoopFirewallDriver
+enabled_apis=osapi_compute,metadata
+osapi_compute_listen=10.10.16.55
+osapi_compute_listen_port=8774
+metadata_listen=10.10.16.55
+metadata_listen_port=8775
+debug=true
+transport_url=rabbit://openstack:pcl123123@controller1:5672,controller2:5672,controller3:5672
+[api]
+auth_strategy=keystone
+[api_database]
+connection=mysql+pymysql://nova:pcl123123@controller/nova_api
+[barbican]
+[cache]
+backend=oslo_cache.memcache_pool
+enabled=True
+memcache_servers=controller1:11211,controller2:11211,controller3:11211
+[cells]
+[cinder]
+os_region_name=RegionTest
+[compute]
+[conductor]
+[console]
+[consoleauth]
+[cors]
+[crypto]
+[database]
+connection = mysql+pymysql://nova:pcl123123@controller/nova
+[devices]
+[ephemeral_storage_encryption]
+[filter_scheduler]
+[glance]
+api_servers = http://controller:9292
+[guestfs]
+[healthcheck]
+[hyperv]
+[ironic]
+[key_manager]
+[keystone]
+[keystone_authtoken]
+auth_uri = http://controller:5000
+auth_url = http://controller:35357
+memcached_servers = controller1:11211,controller2:11211,controller3:11211
+auth_type = password
+project_domain_name = default
+user_domain_name = default
+project_name = service
+username = nova
+password = pcl123123
+[libvirt]
+virt_type=kvm
+images_type=rbd
+images_rbd_pool = vms
+images_rbd_ceph_conf = /etc/ceph/ceph.conf
+rbd_user = cinder
+rbd_secret_uuid = a2eadd99-c580-45dd-9ce3-f6a729253c55
+disk_cachemodes=&quot;network=writeback&quot;
+live_migration_flag=&quot;VIR_MIGRATE_UNDEFINE_SOURCE,VIR_MIGRATE_PEER2PEER,VIR_MIGRATE_LIVE,VIR_MIGRATE_PERSIST_DEST,VIR_MIGRATE_TUNNELLED&quot;
+inject_password = false
+inject_key = false
+inject_partition = -2
+hw_disk_discard = unmap
+[matchmaker_redis]
+[metrics]
+[mks]
+[neutron]
+url = http://controller:9696
+auth_url = http://controller:35357
+auth_type = password
+project_domain_name = default
+user_domain_name = default
+region_name = RegionTest
+project_name = service
+username = neutron
+password = pcl123123
+service_metadata_proxy = true
+metadata_proxy_shared_secret = pcl123123
+[notifications]
+[osapi_v21]
+[oslo_concurrency]
+lock_path=/var/lib/nova/tmp
+[oslo_messaging_amqp]
+[oslo_messaging_kafka]
+[oslo_messaging_notifications]
+[oslo_messaging_rabbit]
+[oslo_messaging_zmq]
+[oslo_middleware]
+[oslo_policy]
+[pci]
+[placement]
+region_name = RegionTest
+project_domain_name = Default
+project_name = service
+auth_type = password
+user_domain_name = Default
+auth_url = http://controller:35357/v3
+username = placement
+password = pcl123123
+[quota]
+[rdp]
+[remote_debug]
+[scheduler]
+[serial_console]
+[service_user]
+[spice]
+[upgrade_levels]
+[vault]
+[vendordata_dynamic_auth]
+[vmware]
+[vnc]
+enabled=true
+server_listen=10.10.16.55
+server_proxyclient_address=10.10.16.55
+# novncproxy_base_url配置的是vnc的链接url 如果设置成controller的话 需要在操作dashboard的主机上添加10.10.16.224 controller映射
+novncproxy_base_url=http://10.10.16.224:6080/vnc_auto.html
+novncproxy_host=10.10.16.55
+novncproxy_port=6080
+[workarounds]
+[wsgi]
+[xenserver]
+[xvp]
+</div></code></code></pre>
+<h4 id="00-nova-placement-apiconf">00-nova-placement-api.conf</h4>
+<p>全部控制节点</p>
+<p><code>[root@controller1 ~]# egrep -v &quot;^$|^#&quot; /etc/httpd/conf.d/00-nova-placement-api.conf</code></p>
+<pre><code><code><div>Listen 10.10.16.55:8778
+&lt;VirtualHost 10.10.16.55:8778&gt;
+  WSGIProcessGroup nova-placement-api
+  WSGIApplicationGroup %{GLOBAL}
+  WSGIPassAuthorization On
+  WSGIDaemonProcess nova-placement-api processes=3 threads=1 user=nova group=nova
+  WSGIScriptAlias / /usr/bin/nova-placement-api
+  &lt;IfVersion &gt;= 2.4&gt;
+    ErrorLogFormat &quot;%M&quot;
+  &lt;/IfVersion&gt;
+  ErrorLog /var/log/nova/nova-placement-api.log
+  #SSLEngine On
+  #SSLCertificateFile ...
+  #SSLCertificateKeyFile ...
+&lt;/VirtualHost&gt;
+Alias /nova-placement-api /usr/bin/nova-placement-api
+&lt;Location /nova-placement-api&gt;
+  SetHandler wsgi-script
+  Options +ExecCGI
+  WSGIProcessGroup nova-placement-api
+  WSGIApplicationGroup %{GLOBAL}
+  WSGIPassAuthorization On
+&lt;/Location&gt;
+&lt;Directory /usr/bin&gt;
+   &lt;IfVersion &gt;= 2.4&gt;
+      Require all granted
+   &lt;/IfVersion&gt;
+   &lt;IfVersion &lt; 2.4&gt;
+      Order allow,deny
+      Allow from all
+   &lt;/IfVersion&gt;
+&lt;/Directory&gt;
+</div></code></code></pre>
+<h3 id="compute-nodes">compute nodes</h3>
+<h4 id="novaconf-1">nova.conf</h4>
+<p>全部计算节点</p>
+<p><code>[root@compute1 ~]# egrep -v &quot;^$|^#&quot; /etc/nova/nova.conf</code></p>
+<pre><code><code><div>[DEFAULT]
+my_ip=10.10.16.59
+use_neutron=true
+firewall_driver=nova.virt.firewall.NoopFirewallDriver
+enabled_apis=osapi_compute,metadata
+transport_url=rabbit://openstack:pcl123123@controller1:5672,controller2:5672,controller3:5672
+[api]
+[api_database]
+[barbican]
+[cache]
+[cells]
+[cinder]
+[compute]
+[conductor]
+[console]
+[consoleauth]
+[cors]
+[crypto]
+[database]
+[devices]
+[ephemeral_storage_encryption]
+[filter_scheduler]
+[glance]
+api_servers=http://controller:9292
+[guestfs]
+[healthcheck]
+[hyperv]
+[ironic]
+[key_manager]
+[keystone]
+[keystone_authtoken]
+auth_uri = http://controller:5000
+auth_url = http://controller:35357
+memcached_servers = controller1:11211,controller2:11211,controller3:11211
+auth_type = password
+project_domain_name = default
+user_domain_name = default
+project_name = service
+username = nova
+password = pcl123123
+[libvirt]
+images_type = rbd
+images_rbd_pool = vms
+images_rbd_ceph_conf = /etc/ceph/ceph.conf
+rbd_user = cinder
+rbd_secret_uuid = a2eadd99-c580-45dd-9ce3-f6a729253c55
+disk_cachemodes=&quot;network=writeback&quot;
+live_migration_flag=&quot;VIR_MIGRATE_UNDEFINE_SOURCE,VIR_MIGRATE_PEER2PEER,VIR_MIGRATE_LIVE,VIR_MIGRATE_PERSIST_DEST,VIR_MIGRATE_TUNNELLED&quot;
+inject_password = false
+inject_key = false
+inject_partition = -2
+hw_disk_discard = unmap
+virt_type=kvm
+[matchmaker_redis]
+[metrics]
+[mks]
+[neutron]
+url=http://controller:9696
+auth_type=password
+auth_url=http://controller:35357
+project_name=service
+project_domain_name=default
+username=neutron
+user_domain_name=default
+password=pcl123123
+region_name=RegionTest 
+[notifications]
+[osapi_v21]
+[oslo_concurrency]
+lock_path=/var/lib/nova/tmp
+[oslo_messaging_amqp]
+[oslo_messaging_kafka]
+[oslo_messaging_notifications]
+[oslo_messaging_rabbit]
+[oslo_messaging_zmq]
+[oslo_middleware]
+[oslo_policy]
+[pci]
+[placement]
+os_region_name=RegionTest
+auth_type=password
+auth_url=http://controller:35357/v3
+project_name=service
+project_domain_name=Default
+username=placement
+user_domain_name=Default
+password=pcl123123
+[quota]
+[rdp]
+[remote_debug]
+[scheduler]
+[serial_console]
+[service_user]
+[spice]
+[upgrade_levels]
+[vault]
+[vendordata_dynamic_auth]
+[vmware]
+[vnc]
+enabled=true
+vncserver_listen=0.0.0.0
+vncserver_proxyclient_address=10.10.16.59
+novncproxy_base_url=http://10.10.16.224:6080/vnc_auto.html
+[workarounds]
+[wsgi]
+[xenserver]
+[xvp]
+</div></code></code></pre>
+<h2 id="neutron">neutron</h2>
+<h3 id="controller-nodes-3">controller nodes</h3>
+<h4 id="neutronconf">neutron.conf</h4>
+<p>全部控制节点
+<code>[root@controller1 ~]# egrep -v &quot;^$|^#&quot; /etc/neutron/neutron.conf</code></p>
+<pre><code><code><div>[DEFAULT]
+bind_host = 10.10.16.55
+auth_strategy = keystone
+core_plugin = ml2
+service_plugins = router
+allow_overlapping_ips = True
+notify_nova_on_port_status_changes = true
+notify_nova_on_port_data_changes = true
+dhcp_agents_per_network = 3
+l3_ha = true
+max_l3_agents_per_router = 3
+min_l3_agents_per_router = 2
+l3_ha_net_cidr = 169.254.192.0/18
+rpc_response_timeout = 180
+[agent]
+[cors]
+[database]
+connection = mysql+pymysql://neutron:pcl123123@controller/neutron
+[keystone_authtoken]
+auth_uri = http://controller:5000
+auth_url = http://controller:35357
+memcached_servers = controller1:11211,controller2:11211,controller3:11211
+auth_type = password
+project_domain_name = default
+user_domain_name = default
+project_name = service
+username = neutron
+password = pcl123123
+[matchmaker_redis]
+[nova]
+auth_url = http://controller:35357
+auth_type = password
+project_domain_name = default
+user_domain_name = default
+region_name = RegionTest
+project_name = service
+username = nova
+password = pcl123123
+[oslo_concurrency]
+lock_path = /var/lib/neutron/tmp
+[oslo_messaging_amqp]
+[oslo_messaging_kafka]
+[oslo_messaging_notifications]
+transport_url = rabbit://openstack:pcl123123@controller1:5672,controller2:5672,controller3:5672
+[oslo_messaging_rabbit]
+[oslo_messaging_zmq]
+[oslo_middleware]
+[oslo_policy]
+[quotas]
+[ssl]
+</div></code></code></pre>
+<h4 id="ml2confini">ml2_conf.ini</h4>
+<p>全部控制节点</p>
+<p><code>[root@controller1 ~]# egrep -v &quot;^$|^#&quot; /etc/neutron/plugins/ml2/ml2_conf.ini</code></p>
+<pre><code><code><div>[DEFAULT]
+[l2pop]
+[ml2]
+type_drivers = flat,vlan,vxlan
+tenant_network_types = vlan,vxlan,flat
+mechanism_drivers = linuxbridge,l2population
+extension_drivers = port_security
+ Maximum size of an IP packet (MTU) that can traverse the underlying physical
+[ml2_type_flat]
+flat_networks = external
+[ml2_type_geneve]
+[ml2_type_gre]
+[ml2_type_vlan]
+network_vlan_ranges = vlan:3001:3500
+[ml2_type_vxlan]
+vni_ranges = 10001:20000
+[securitygroup]
+enable_ipset = true
+</div></code></code></pre>
+<h4 id="linuxbridgeagentini">linuxbridge_agent.ini</h4>
+<p>全部控制节点</p>
+<p><code>[root@controller1 ~]# egrep -v &quot;^$|^#&quot; /etc/neutron/plugins/ml2/linuxbridge_agent.ini</code></p>
+<pre><code><code><div>[DEFAULT]
+[agent]
+[linux_bridge]
+physical_interface_mappings = external:enahisic2i1,vlan:enahisic2i2
+[network_log]
+[securitygroup]
+firewall_driver = neutron.agent.linux.iptables_firewall.IptablesFirewallDriver
+enable_security_group = true
+[vxlan]
+enable_vxlan = true
+local_ip = 10.10.16.55
+l2_population = true
+</div></code></code></pre>
+<h4 id="l3agentini">l3_agent.ini</h4>
+<p>全部控制节点</p>
+<p><code>[root@controller1 ~]# egrep -v &quot;^$|^#&quot;  /etc/neutron/l3_agent.ini</code></p>
+<pre><code><code><div>[DEFAULT]
+interface_driver = linuxbridge
+[agent]
+[ovs]
+</div></code></code></pre>
+<h4 id="dhcpagentini">dhcp_agent.ini</h4>
+<p>全部控制节点</p>
+<p><code>[root@controller1 ~]# egrep -v &quot;^$|^#&quot; /etc/neutron/dhcp_agent.ini</code></p>
+<pre><code><code><div>[DEFAULT]
+interface_driver = linuxbridge
+dhcp_driver = neutron.agent.linux.dhcp.Dnsmasq
+enable_isolated_metadata = true
+[agent]
+[ovs]
+</div></code></code></pre>
+<h4 id="metadataagentini">metadata_agent.ini</h4>
+<p>全部控制节点</p>
+<p><code>[root@controller1 ~]# egrep -v &quot;^$|^#&quot;  /etc/neutron/metadata_agent.ini</code></p>
+<pre><code><code><div>[DEFAULT]
+nova_metadata_host = controller
+metadata_proxy_shared_secret = pcl123123
+[agent]
+[cache]
+</div></code></code></pre>
+<h3 id="compute-nodes-1">compute nodes</h3>
+<h4 id="neutronconf-1">neutron.conf</h4>
+<p>全部计算节点</p>
+<p><code>[root@compute1 ~]# egrep -v &quot;^$|^#&quot; /etc/neutron/neutron.conf</code></p>
+<pre><code><code><div>[DEFAULT]
+state_path = /var/lib/neutron
+bind_host = 10.10.16.59
+auth_strategy = keystone
+transport_url=rabbit://openstack:pcl123123@controller1:5672,controller2:5672,controller3:5672
+[agent]
+[cors]
+[database]
+[keystone_authtoken]
+www_authenticate_uri = http://controller:5000
+auth_url = http://controller:35357
+memcached_servers = controller1:11211,controller2:11211,controller3:11211
+auth_type = password
+project_domain_name = default
+user_domain_name = default
+project_name = service
+username = neutron
+password = pcl123123
+[matchmaker_redis]
+[nova]
+[oslo_concurrency]
+lock_path = $state_path/lock
+[oslo_messaging_amqp]
+[oslo_messaging_kafka]
+[oslo_messaging_notifications]
+[oslo_messaging_rabbit]
+[oslo_messaging_zmq]
+[oslo_middleware]
+[oslo_policy]
+[quotas]
+[ssl]
+</div></code></code></pre>
+<h4 id="linuxbridgeagentini-1">linuxbridge_agent.ini</h4>
+<p>全部计算节点</p>
+<p><code>[root@compute1 ~]# egrep -v &quot;^$|^#&quot; /etc/neutron/plugins/ml2/linuxbridge_agent.ini</code></p>
+<pre><code><code><div>[DEFAULT]
+[agent]
+[linux_bridge]
+physical_interface_mappings = vlan:enahisic2i2
+[network_log]
+[securitygroup]
+firewall_driver = neutron.agent.linux.iptables_firewall.IptablesFirewallDriver
+enable_security_group = true
+[vxlan]
+enable_vxlan = true
+local_ip = 10.10.16.59
+l2_population = true
+</div></code></code></pre>
+<h2 id="horizon">horizon</h2>
+<h3 id="controller-nodes-4">controller nodes</h3>
+<h4 id="localsettings">local_settings</h4>
+<p><code>[root@controller1 ~]# egrep -v &quot;^$|^#&quot;  /etc/openstack-dashboard/local_settings</code></p>
+<pre><code><code><div>import os
+from django.utils.translation import ugettext_lazy as _
+from openstack_dashboard.settings import HORIZON_CONFIG
+DEBUG = False
+WEBROOT = '/dashboard/'
+ALLOWED_HOSTS = ['*', 'localhost']
+OPENSTACK_API_VERSIONS = {
+    &quot;data-processing&quot;: 1.1,
+    &quot;identity&quot;: 3,
+    &quot;image&quot;: 2,
+    &quot;volume&quot;: 2,
+    &quot;compute&quot;: 2,
+}
+OPENSTACK_KEYSTONE_MULTIDOMAIN_SUPPORT = True
+OPENSTACK_KEYSTONE_DEFAULT_DOMAIN = 'Default'
+LOCAL_PATH = '/tmp'
+SECRET_KEY='9c9b066daed23b3bacfb'
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
+        'LOCATION': 'controller1:11211,controller2:11211,controller3:11211',
+    },
+}
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+OPENSTACK_HOST = &quot;controller&quot;
+OPENSTACK_KEYSTONE_URL = &quot;http://%s:5000/v3&quot; % OPENSTACK_HOST
+OPENSTACK_KEYSTONE_DEFAULT_ROLE = &quot;user&quot;
+OPENSTACK_KEYSTONE_BACKEND = {
+    'name': 'native',
+    'can_edit_user': True,
+    'can_edit_group': True,
+    'can_edit_project': True,
+    'can_edit_domain': True,
+    'can_edit_role': True,
+}
+OPENSTACK_HYPERVISOR_FEATURES = {
+    'can_set_mount_point': False,
+    'can_set_password': False,
+    'requires_keypair': False,
+    'enable_quotas': True
+}
+OPENSTACK_CINDER_FEATURES = {
+    'enable_backup': False,
+}
+OPENSTACK_NEUTRON_NETWORK = {
+    'enable_router': True,
+    'enable_quotas': True,
+    'enable_ipv6': True,
+    'enable_distributed_router': False,
+    'enable_ha_router': False,
+    'enable_fip_topology_check': True,
+    # Default dns servers you would like to use when a subnet is
+    # created.  This is only a default, users can still choose a different
+    # list of dns servers when creating a new subnet.
+    # The entries below are examples only, and are not appropriate for
+    # real deployments
+    # 'default_dns_nameservers': [&quot;8.8.8.8&quot;, &quot;8.8.4.4&quot;, &quot;208.67.222.222&quot;],
+    # Set which provider network types are supported. Only the network types
+    # in this list will be available to choose from when creating a network.
+    # Network types include local, flat, vlan, gre, vxlan and geneve.
+    # 'supported_provider_types': ['*'],
+    # You can configure available segmentation ID range per network type
+    # in your deployment.
+    # 'segmentation_id_range': {
+    #     'vlan': [1024, 2048],
+    #     'vxlan': [4094, 65536],
+    # },
+    # You can define additional provider network types here.
+    # 'extra_provider_types': {
+    #     'awesome_type': {
+    #         'display_name': 'Awesome New Type',
+    #         'require_physical_network': False,
+    #         'require_segmentation_id': True,
+    #     }
+    # },
+    # Set which VNIC types are supported for port binding. Only the VNIC
+    # types in this list will be available to choose from when creating a
+    # port.
+    # VNIC types include 'normal', 'direct', 'direct-physical', 'macvtap',
+    # 'baremetal' and 'virtio-forwarder'
+    # Set to empty list or None to disable VNIC type selection.
+    'supported_vnic_types': ['*'],
+    # Set list of available physical networks to be selected in the physical
+    # network field on the admin create network modal. If it's set to an empty
+    # list, the field will be a regular input field.
+    # e.g. ['default', 'test']
+    'physical_networks': [],
+}
+OPENSTACK_HEAT_STACK = {
+    'enable_user_pass': True,
+}
+IMAGE_CUSTOM_PROPERTY_TITLES = {
+    &quot;architecture&quot;: _(&quot;Architecture&quot;),
+    &quot;kernel_id&quot;: _(&quot;Kernel ID&quot;),
+    &quot;ramdisk_id&quot;: _(&quot;Ramdisk ID&quot;),
+    &quot;image_state&quot;: _(&quot;Euca2ools state&quot;),
+    &quot;project_id&quot;: _(&quot;Project ID&quot;),
+    &quot;image_type&quot;: _(&quot;Image Type&quot;),
+}
+IMAGE_RESERVED_CUSTOM_PROPERTIES = []
+API_RESULT_LIMIT = 1000
+API_RESULT_PAGE_SIZE = 20
+SWIFT_FILE_TRANSFER_CHUNK_SIZE = 512 * 1024
+INSTANCE_LOG_LENGTH = 35
+DROPDOWN_MAX_ITEMS = 30
+TIME_ZONE = &quot;Asia/Shanghai&quot;
+POLICY_FILES_PATH = '/etc/openstack-dashboard'
+LOGGING = {
+    'version': 1,
+    # When set to True this will disable all logging except
+    # for loggers specified in this configuration dictionary. Note that
+    # if nothing is specified here and disable_existing_loggers is True,
+    # django.db.backends will still log unless it is disabled explicitly.
+    'disable_existing_loggers': False,
+    # If apache2 mod_wsgi is used to deploy OpenStack dashboard
+    # timestamp is output by mod_wsgi. If WSGI framework you use does not
+    # output timestamp for logging, add %(asctime)s in the following
+    # format definitions.
+    'formatters': {
+        'console': {
+            'format': '%(levelname)s %(name)s %(message)s'
+        },
+        'operation': {
+            # The format of &quot;%(message)s&quot; is defined by
+            # OPERATION_LOG_OPTIONS['format']
+            'format': '%(message)s'
+        },
+    },
+    'handlers': {
+        'null': {
+            'level': 'DEBUG',
+            'class': 'logging.NullHandler',
+        },
+        'console': {
+            # Set the level to &quot;DEBUG&quot; for verbose output logging.
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
+            'formatter': 'console',
+        },
+        'operation': {
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
+            'formatter': 'operation',
+        },
+    },
+    'loggers': {
+        'horizon': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+        'horizon.operation_log': {
+            'handlers': ['operation'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'openstack_dashboard': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+        'novaclient': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+        'cinderclient': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+        'keystoneauth': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+        'keystoneclient': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+        'glanceclient': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+        'neutronclient': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+        'swiftclient': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+        'oslo_policy': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+        'openstack_auth': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+        'nose.plugins.manager': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+        'django': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+        # Logging from django.db.backends is VERY verbose, send to null
+        # by default.
+        'django.db.backends': {
+            'handlers': ['null'],
+            'propagate': False,
+        },
+        'requests': {
+            'handlers': ['null'],
+            'propagate': False,
+        },
+        'urllib3': {
+            'handlers': ['null'],
+            'propagate': False,
+        },
+        'chardet.charsetprober': {
+            'handlers': ['null'],
+            'propagate': False,
+        },
+        'iso8601': {
+            'handlers': ['null'],
+            'propagate': False,
+        },
+        'scss': {
+            'handlers': ['null'],
+            'propagate': False,
+        },
+    },
+}
+SECURITY_GROUP_RULES = {
+    'all_tcp': {
+        'name': _('All TCP'),
+        'ip_protocol': 'tcp',
+        'from_port': '1',
+        'to_port': '65535',
+    },
+    'all_udp': {
+        'name': _('All UDP'),
+        'ip_protocol': 'udp',
+        'from_port': '1',
+        'to_port': '65535',
+    },
+    'all_icmp': {
+        'name': _('All ICMP'),
+        'ip_protocol': 'icmp',
+        'from_port': '-1',
+        'to_port': '-1',
+    },
+    'ssh': {
+        'name': 'SSH',
+        'ip_protocol': 'tcp',
+        'from_port': '22',
+        'to_port': '22',
+    },
+    'smtp': {
+        'name': 'SMTP',
+        'ip_protocol': 'tcp',
+        'from_port': '25',
+        'to_port': '25',
+    },
+    'dns': {
+        'name': 'DNS',
+        'ip_protocol': 'tcp',
+        'from_port': '53',
+        'to_port': '53',
+    },
+    'http': {
+        'name': 'HTTP',
+        'ip_protocol': 'tcp',
+        'from_port': '80',
+        'to_port': '80',
+    },
+    'pop3': {
+        'name': 'POP3',
+        'ip_protocol': 'tcp',
+        'from_port': '110',
+        'to_port': '110',
+    },
+    'imap': {
+        'name': 'IMAP',
+        'ip_protocol': 'tcp',
+        'from_port': '143',
+        'to_port': '143',
+    },
+    'ldap': {
+        'name': 'LDAP',
+        'ip_protocol': 'tcp',
+        'from_port': '389',
+        'to_port': '389',
+    },
+    'https': {
+        'name': 'HTTPS',
+        'ip_protocol': 'tcp',
+        'from_port': '443',
+        'to_port': '443',
+    },
+    'smtps': {
+        'name': 'SMTPS',
+        'ip_protocol': 'tcp',
+        'from_port': '465',
+        'to_port': '465',
+    },
+    'imaps': {
+        'name': 'IMAPS',
+        'ip_protocol': 'tcp',
+        'from_port': '993',
+        'to_port': '993',
+    },
+    'pop3s': {
+        'name': 'POP3S',
+        'ip_protocol': 'tcp',
+        'from_port': '995',
+        'to_port': '995',
+    },
+    'ms_sql': {
+        'name': 'MS SQL',
+        'ip_protocol': 'tcp',
+        'from_port': '1433',
+        'to_port': '1433',
+    },
+    'mysql': {
+        'name': 'MYSQL',
+        'ip_protocol': 'tcp',
+        'from_port': '3306',
+        'to_port': '3306',
+    },
+    'rdp': {
+        'name': 'RDP',
+        'ip_protocol': 'tcp',
+        'from_port': '3389',
+        'to_port': '3389',
+    },
+}
+REST_API_REQUIRED_SETTINGS = ['OPENSTACK_HYPERVISOR_FEATURES',
+                              'LAUNCH_INSTANCE_DEFAULTS',
+                              'OPENSTACK_IMAGE_FORMATS',
+                              'OPENSTACK_KEYSTONE_DEFAULT_DOMAIN',
+                              'CREATE_IMAGE_DEFAULTS',
+                              'ENFORCE_PASSWORD_CHECK']
+ALLOWED_PRIVATE_SUBNET_CIDR = {'ipv4': [], 'ipv6': []}
+</div></code></code></pre>
+<h4 id="openstack-dashboardconf">openstack-dashboard.conf</h4>
+<p><code>[root@controller1 ~]# egrep -v &quot;^$|^#&quot; /etc/httpd/conf.d/openstack-dashboard.conf</code></p>
+<pre><code><code><div>WSGIDaemonProcess dashboard
+WSGIProcessGroup dashboard
+WSGISocketPrefix run/wsgi
+WSGIApplicationGroup %{GLOBAL}
+WSGIScriptAlias /dashboard /usr/share/openstack-dashboard/openstack_dashboard/wsgi/django.wsgi
+Alias /dashboard/static /usr/share/openstack-dashboard/static
+&lt;Directory /usr/share/openstack-dashboard/openstack_dashboard/wsgi&gt;
+  Options All
+  AllowOverride All
+  Require all granted
+&lt;/Directory&gt;
+&lt;Directory /usr/share/openstack-dashboard/static&gt;
+  Options All
+  AllowOverride All
+  Require all granted
+&lt;/Directory&gt;
+</div></code></code></pre>
+<h2 id="cinder">cinder</h2>
+<h3 id="controller-nodes-5">controller nodes</h3>
+<h4 id="cinderconf">cinder.conf</h4>
+<p>所有控制节点</p>
+<p><code>[root@controller1 ~]# egrep -v &quot;^$|^#&quot; /etc/cinder/cinder.conf</code></p>
+<pre><code><code><div>[DEFAULT]
+state_path = /var/lib/cinder
+my_ip = 10.10.16.55
+glance_api_servers = http://controller:9292
+auth_strategy = keystone
+enabled_backends = ceph
+osapi_volume_listen = 10.10.16.55
+osapi_volume_listen_port = 8776
+log_dir = /var/log/cinder
+transport_url = rabbit://openstack:pcl123123@controller1:5672,controller2:5672,controller3:5672
+[backend]
+[backend_defaults]
+[barbican]
+[brcd_fabric_example]
+[cisco_fabric_example]
+[coordination]
+[cors]
+[database]
+connection = mysql+pymysql://cinder:pcl123123@controller/cinder
+[fc-zone-manager]
+[healthcheck]
+[key_manager]
+[keystone_authtoken]
+www_authenticate_uri = http://controller:5000
+auth_url = http://controller:35357
+memcached_servers = controller1:11211,controller2:11211,controller3:11211
+auth_type = password
+project_domain_id = default
+user_domain_id = default
+project_name = service
+username = cinder
+password = pcl123123
+[matchmaker_redis]
+[nova]
+[oslo_concurrency]
+lock_path = $state_path/tmp
+[oslo_messaging_amqp]
+[oslo_messaging_kafka]
+[oslo_messaging_notifications]
+[oslo_messaging_rabbit]
+[oslo_messaging_zmq]
+[oslo_middleware]
+[oslo_policy]
+[oslo_reports]
+[oslo_versionedobjects]
+[profiler]
+[service_user]
+[ssl]
+[vault]
+[ceph]
+volume_driver = cinder.volume.drivers.rbd.RBDDriver
+rbd_pool = volumes
+rbd_ceph_conf = /etc/ceph/ceph.conf
+rbd_flatten_volume_from_snapshot = false
+rbd_max_clone_depth = 5
+rbd_store_chunk_size = 4
+rados_connect_timeout = -1
+glance_api_version = 2
+rbd_user = cinder
+rbd_secret_uuid = a2eadd99-c580-45dd-9ce3-f6a729253c55
+volume_backend_name = ceph
+</div></code></code></pre>
+<h3 id="compute-nodes-2">compute nodes</h3>
+<h4 id="cinderconf-1">cinder.conf</h4>
+<p>所有计算节点</p>
+<p><code>[root@compute1 ~]# egrep -v &quot;^$|^#&quot; /etc/cinder/cinder.conf</code></p>
+<pre><code><code><div>[DEFAULT]
+state_path = /var/lib/cinder
+my_ip = 10.10.16.59
+glance_api_servers = http://controller:9292
+auth_strategy = keystone
+enabled_backends = ceph
+transport_url=rabbit://openstack:pcl123123@controller1:5672,controller2:5672,controller3:5672
+[backend]
+[backend_defaults]
+[barbican]
+[brcd_fabric_example]
+[cisco_fabric_example]
+[coordination]
+[cors]
+[database]
+connection = mysql+pymysql://cinder:pcl123123@controller/cinder
+[fc-zone-manager]
+[healthcheck]
+[key_manager]
+[keystone_authtoken]
+www_authenticate_uri = http://controller:5000
+auth_url = http://controller:35357
+memcached_servers = controller1:11211,controller2:11211,controller3:11211
+auth_type = password
+project_domain_id = default
+user_domain_id = default
+project_name = service
+username = cinder
+password = pcl123123
+[matchmaker_redis]
+[nova]
+[oslo_concurrency]
+lock_path = $state_path/tmp
+[oslo_messaging_amqp]
+[oslo_messaging_kafka]
+[oslo_messaging_notifications]
+[oslo_messaging_rabbit]
+[oslo_messaging_zmq]
+[oslo_middleware]
+[oslo_policy]
+[oslo_reports]
+[oslo_versionedobjects]
+[profiler]
+[service_user]
+[ssl]
+[vault]
+[ceph]
+volume_driver = cinder.volume.drivers.rbd.RBDDriver
+rbd_pool = volumes
+rbd_ceph_conf = /etc/ceph/ceph.conf
+rbd_flatten_volume_from_snapshot = false
+rbd_max_clone_depth = 5
+rbd_store_chunk_size = 4
+rados_connect_timeout = -1
+glance_api_version = 2
+rbd_user = cinder
+rbd_secret_uuid = a2eadd99-c580-45dd-9ce3-f6a729253c55
+volume_backend_name = ceph
+</div></code></code></pre>
+
+    </body>
+    </html>
