@@ -36,17 +36,6 @@ Docker 自身组件
 
 ## 安装docker
 
-更换到阿里源
-
-    ```shell
-        cat >/etc/yum.repos.d/docker.repo <<-EOF
-        [dockerrepo]
-        name=Docker Repository
-        baseurl=https://yum.dockerproject.org/repo/main/centos/7
-        enabled=1
-        gpgcheck=1
-        gpgkey=https://yum.dockerproject.org/gpg EOF
-    ```
 `yum makecache`重新产生源的缓存
 `yum install docker`安装docker
 `systemctl start docker`
@@ -59,11 +48,10 @@ Docker 自身组件
 `chmod 777 /etc/systemd/system/docker.service`
 `vim /etc/systemd/system/docker.service`
 插入以下内容
-ExecStart=/usr/bin/dockerd-current --registry-
-mirror=https://kfp63jaj.mirror.aliyuncs.com \
+ExecStart=/usr/bin/dockerd-current --registry-mirror=https://kfp63jaj.mirror.aliyuncs.com
 
 `systemctl daemon-reload`
-`systemctl restart`
+`systemctl restart docker`
 `ps -ef | grep docker`
 
 
@@ -95,6 +83,12 @@ docker logs MywordPress 查看容器日志
 docker stats MywordPress 查看容器所占用的系统资源
 docker exec 容器名 容器内执行的命令 容器执行命令
 docker exec -it 容器名 /bin/bash 登入容器的bash
+ 
+`docker commit 28473f6ce712 sponge_app` 提交正在运行的容器28473f6ce712为镜像sponge_app
+
+
+`docker run -itd --name sponge_db --network sponge_network centos:7 /bin/bash`
+
 
 docker cp cranky_elion:/home/hujin/20-02-28 /home/hujin 从容器中拷贝文件到宿主机
 
@@ -110,6 +104,17 @@ docker run的参数
 
 容器创建时需要指定镜像，每个镜像都由唯一的标示Image ID ，和容器的Container ID 一样，
 也可以使用镜像名与版本号两部分组合唯一标示，如果省略版本号，默认使用最新版本标签(latesr)
+
+## 网络
+
+创建网络
+docker network create sponge_network
+
+查询容器sponge_app的ip地址
+docker inspect sponge_app | grep IPAddress
+
+将容器的8080端口映射到docker主机的8080端口
+iptables -t nat -A  DOCKER -p tcp --dport 8080 -j DNAT --to-destination 172.18.0.2:8080
 
 镜像的分层：Docker 的镜像通过联合文件系统(union filesystem) 将各层文件系统叠加在一起
 > bootfs：用于系统引导的文件系统，包括bootloader 和kernel，容器启动完成后会被卸载以节省内存资源

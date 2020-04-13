@@ -88,3 +88,39 @@ trusted-host = pypi.douban.com
 `sudo update-alternatives --config python`
 
 然后选者你需要的python版本，输入序号回车即可
+
+
+## 解决Python2 pip问题
+
+yum install epel-release -y
+
+yum -y install python-pip
+
+pip install --upgrade pip
+
+pip -V
+
+
+## 安装Python3
+
+yum install zlib-devel bzip2-devel openssl-devel ncurses-devel sqlite-devel readline-devel tk-devel gcc make
+
+wget https://www.python.org/ftp/python/3.6.6/Python-3.6.6.tar.xz
+
+tar -xvJf Python-3.6.6.tar.xz
+
+cd Python-3.6.6
+
+./configure prefix=/usr/local/python3
+
+make && make install
+
+ln -s /usr/local/python3/bin/python3 /usr/bin/python3
+
+cd /usr/local/python3/bin/
+
+ln -s /usr/local/python3/bin/pip3 /usr/bin/pip3
+
+pip3 install --upgrade pip
+
+pip3 -V
