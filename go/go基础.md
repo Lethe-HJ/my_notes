@@ -53,47 +53,47 @@ hello.go
 
 mian.go
 
-    ```go
-    //当前程序的包名
-    package main
-    
-    //导入其他的包
-    import "fmt"
-    //别名
-    import std "fmt"
+```go
+//当前程序的包名
+package main
 
-    //常量的定义
-    const PI = 3.14
-    const (
-        PI = 3.14
-        const1 = "1"
-    )
+//导入其他的包
+import "fmt"
+//别名
+import std "fmt"
 
-    //全局变量的声明与赋值
-    var name = "gopher"
-    var (
-        name1 = 1
-        name2 = 2
-    )
-    
-    //一般类型的声明
-    type newType int
-    type (
-        newType int
-        type1 string
-    )
+//常量的定义
+const PI = 3.14
+const (
+    PI = 3.14
+    const1 = "1"
+)
 
-    //结构的声明
-    type gopher struct{}
+//全局变量的声明与赋值
+var name = "gopher"
+var (
+    name1 = 1
+    name2 = 2
+)
 
-    //接口的声明
-    type golang interface{}
+//一般类型的声明
+type newType int
+type (
+    newType int
+    type1 string
+)
 
-    //main函数作为程序入口
-    func mian(){
-        PrintIn("Hello world")
-    }
-    ```
+//结构的声明
+type gopher struct{}
+
+//接口的声明
+type golang interface{}
+
+//main函数作为程序入口
+func mian(){
+    PrintIn("Hello world")
+}
+```
 
     go语言中约定 首字母小写 即为private 大写为public
 

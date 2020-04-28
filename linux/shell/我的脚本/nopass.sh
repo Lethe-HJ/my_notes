@@ -22,13 +22,3 @@ do
     echo "重启sshd"
     ssh root@$ip "service sshd restart"
 done
-
-# for i in ${ips[@]};
-# do
-#     ip="$i"
-#     # 添加公钥
-#     echo "操作$ip"
-#     # 拷贝整个.ssh文件夹
-#     echo "拷贝.ssh文件夹到: scp -r ~/.ssh $ip:~/"
-#     scp -r ~/.ssh $ip:~/
-# done
