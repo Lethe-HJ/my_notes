@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+</head>
+<style>
+    .el-row {
+        margin-bottom: 20px;
+        &:last-child {
+            margin-bottom: 0;
+        }
+    }
+    
+    .el-col {
+        border-radius: 4px;
+    }
+    
+    .bg-purple-dark {
+        background: #99a9bf;
+    }
+    
+    .bg-purple {
+        background: #d3dce6;
+    }
+    
+    .bg-purple-light {
+        background: #e5e9f2;
+    }
+    
+    .grid-content {
+        border-radius: 4px;
+        min-height: 36px;
+    }
+    
+    .row-bg {
+        padding: 10px 0;
+        background-color: #f9fafc;
+    }
+</style>
+
+<body>
+    <div id="app">
+        <!-- <el-button @click="visible = true">按钮</el-button>
+        <el-dialog :visible.sync="visible" title="Hello world">
+            <p>欢迎使用 Element</p>
+        </el-dialog> -->
+
+        <h1>Layout布局</h1>
+        <!-- 单一分栏创建基础的栅格布局 -->
+
+        <h2>基础布局</h2>
+        <el-row>
+            <!-- 每行默认分成24格 -->
+            <el-col :span="12">
+                <!-- 这个col占12格 -->
+                <div class="grid-content bg-purple"></div>
+            </el-col>
+            <el-col :span="12">
+                <div class="grid-content bg-purple-light"></div>
+            </el-col>
+        </el-row>
+
+        <h2>分栏间隔</h2>
+        <!-- Row 组件 提供 gutter 属性来指定每一栏之间的间隔，默认间隔为 0。 -->
+        <el-row :gutter="20">
+            <el-col :span="6">
+                <div class="grid-content bg-purple"></div>
+            </el-col>
+            <el-col :span="6">
+                <div class="grid-content bg-purple"></div>
+            </el-col>
+            <el-col :span="6">
+                <div class="grid-content bg-purple"></div>
+            </el-col>
+            <el-col :span="6">
+                <div class="grid-content bg-purple"></div>
+            </el-col>
+        </el-row>
+
+        <h2>分栏偏移</h2>
+        <!-- 通过制定 col 组件的 offset 属性可以指定分栏偏移的栏数 -->
+        <el-row :gutter="20">
+            <el-col :span="6" :offset="6">
+                <div class="grid-content bg-purple"></div>
+            </el-col>
+        </el-row>
+
+        <h2>对齐方式</h2>
+        <!-- 将 type 属性赋值为 'flex'，可以启用 flex 布局，并可通过 justify 属性来指定 start, center, end, space-between, space-around 其中的值来定义子元素的排版方式。 -->
+        <!-- 居中对齐 -->
+        <el-row type="flex" class="row-bg" justify="center">
+            <el-col :span="6">
+                <div class="grid-content bg-purple"></div>
+            </el-col>
+            <el-col :span="6">
+                <div class="grid-content bg-purple-light"></div>
+            </el-col>
+            <el-col :span="6">
+                <div class="grid-content bg-purple"></div>
+            </el-col>
+        </el-row>
+
+        <h2>响应式布局</h2>
+        <!-- 参照了 Bootstrap 的 响应式设计，预设了五个响应尺寸：xs、sm、md、lg 和 xl。 -->
+        <!-- xs 768 sm 992 md 1200 lg 1920 xl -->
+        <el-row :gutter="10">
+            <el-col :xs="8" :sm="6" :md="4" :lg="3" :xl="1">
+                <div class="grid-content bg-purple"></div>
+            </el-col>
+            <el-col :xs="4" :sm="6" :md="8" :lg="9" :xl="11">
+                <div class="grid-content bg-purple-light"></div>
+            </el-col>
+            <el-col :xs="4" :sm="6" :md="8" :lg="9" :xl="11">
+                <div class="grid-content bg-purple"></div>
+            </el-col>
+            <el-col :xs="8" :sm="6" :md="4" :lg="3" :xl="1">
+                <div class="grid-content bg-purple-light"></div>
+            </el-col>
+        </el-row>
+    </div>
+</body>
+<!-- 先引入 Vue -->
+<script src="https://unpkg.com/vue/dist/vue.js"></script>
+<!-- 引入组件库 -->
+<script src="https://unpkg.com/element-ui/lib/index.js"></script>
+<script>
+    new Vue({
+        el: '#app',
+        data: function() {
+            return {
+                visible: false
+            }
+        }
+    })
+</script>
+
+</html>
