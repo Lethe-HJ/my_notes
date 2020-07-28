@@ -1,4 +1,7 @@
+# axios
+
 axios是一个基于Promise用域浏览器和node.js的http客户端
+
 它具有以下特征
 
 + 支持浏览器和node.js
@@ -8,62 +11,117 @@ axios是一个基于Promise用域浏览器和node.js的http客户端
 
 `node install axios`
 
-引入
+## 引入
 
 `import axios from 'axios'`
 
+## axios API
+
+可以通过向 axios 传递相关配置来创建请求
+
+### axios(config)
+
 ```js
+// 发送 POST 请求
 axios({
-      method: "get",
-      url: "https://www.easy-mock.com/mock/5ef094165fceee66245ba9fa/test/demo1?id=123"
-    })
-      .then(response => {
-        console.log(response);
-      })
-      .catch(error => {
-        console.log(error);
-      });
+  method: 'post',
+  url: '/user/12345',
+  data: {
+    firstName: 'Fred',
+    lastName: 'Flintstone'
+  }
+}) // 返回promise
+
+// 发送get请求
+axios({
+  method:'get',
+  url:'http://bit.ly/2mTM3nY',
+  responseType:'stream'
+})
 ```
+
+### axios(url[, config])
 
 ```js
-axios.get("https://www.easy-mock.com/mock/5ef094165fceee66245ba9fa/test/demo1", {
-    params: {
-        id: 123
-    }
-})//...
-
-//相当于 https://www.easy-mock.com/mock/5ef094165fceee66245ba9fa/test/demo1?id=123
-
+// 发送 GET 请求（默认的方法）
+axios('/user/12345');
 ```
 
-### post
+## 请求方法的别名
+
+为方便起见，为所有支持的请求方法提供了别名
+
+`axios.request(config)`
+
+`axios.get(url[, config])`
+
+`axios.delete(url[, config])`
+
+`axios.head(url[, config])`
+
+`axios.options(url[, config])`
+
+`axios.post(url[, data[, config]])`
+
+`axios.put(url[, data[, config]])`
+
+`axios.patch(url[, data[, config]])`
+
+## 并发
+
+处理并发请求的助手函数
+
+`axios.all(iterable)`
+
+`axios.spread(callback)`
+
+创建实例
+
+可以使用自定义配置新建一个 axios 实例
+
+`axios.create([config])`
 
 ```js
-//post传递json
-axios.post("https://www.easy-mock.com/mock/5ef094165fceee66245ba9fa/test/demo1", {
-    name: "laohu",
-    age: 12
-})//...
-//第二个参数是json数据
+const instance = axios.create({
+  baseURL: 'https://some-domain.com/api/',
+  timeout: 1000,
+  headers: {'X-Custom-Header': 'foobar'}
+});
+```
 
-//post传递参数
-const params = new URLSearchParams();
-params.append('id', '123');
-params.append('name', 'laohu');
-axios.post("https://www.easy-mock.com/mock/5ef094165fceee66245ba9fa/test/demo1", params)//...
-//相当与https://www.easy-mock.com/mock/5ef094165fceee66245ba9fa/test/demo1?id=123&name=laohu  
+实例方法
+
+以下是可用的实例方法。指定的配置将与实例的配置合并。
+
+`axiosInstance.request(config)`
+
+`axiosInstance.get(url[, config])`
+
+`axiosInstance.delete(url[, config])`
+
+`axiosInstance.head(url[, config])`
+
+`axiosInstance.options(url[, config])`
+
+`axiosInstance.post(url[, data[, config]])`
+
+`axiosInstance.put(url[, data[, config]])`
+
+`axiosInstance.patch(url[, data[, config]])`
+
+```js
+function getUserAccount() {
+  return axios.get('/user/12345');
+}
+
+function getUserPermissions() {
+  return axios.get('/user/12345/permissions');
+}
+
+axios.all([getUserAccount(), getUserPermissions()])
+  .then(axios.spread(function (acct, perms) {
+    // 两个请求现在都执行完成
+  }));
 
 ```
 
-
-## restful
-
-get 查询
-post 添加
-put 修改
-delete 删除
-
-
-## easy-mock
-
-www.easy-mock.com

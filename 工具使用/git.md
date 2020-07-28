@@ -47,3 +47,8 @@ git cherry-pick支持一次转移多个提交
 `git rebase -i master`
 `git commit --amend`
 `git-review -y`
+
+
+
+取消上一次commit 保留代码
+`git reset --soft HEAD^`

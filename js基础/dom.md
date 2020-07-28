@@ -146,6 +146,15 @@ let attribute = element.getAttribute(attributeName);
 
 ### setAttribute
 
+设置指定元素上的某个属性值。如果属性已经存在，则更新该值；否则，使用指定的名称和值添加一个新的属性。
+
 ```js
 element.setAttribute(name, value);
+```
+
+尽管对于不存在的属性，getAttribute() 返回 null，你还是应该使用 removeAttribute() 代替 elt.setAttribute(attr, null) 来删除属性。
+
+```js
+var b = document.querySelector("button")
+b.setAttribute("name", "helloButton")
 ```
