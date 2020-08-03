@@ -9,7 +9,7 @@
 
 `git remote` 查看远程库的信息
 `git remote -v` 更加详细的远程库信息
-
+`git remote rm origin` 删除origin这个远程库关联
 第一次推送
 `git push -u origin master`
 
@@ -181,15 +181,62 @@ rebase操作可以把本地未push的分叉提交历史整理成直线，使得�
 Git的标签虽然是版本库的快照，但其实它就是指向某个commit的指针，但是这个指针不能移动
 tag就是一个有意义的名字，它跟某个commit绑定
 
+切换到需要打标签的分支上
 
+`git tag <tagname>`
 
+这样就可以往的该分支上最近的提交上绑定一个标签
 
-## gerrit 提交
+还可以指定特定的COMMIT_ID
 
-`git branch`
-`git checkout master`
-`git pull`
-`git checkout hujin`
-`git rebase -i master`
-`git commit --amend`
-`git-review -y`
+`git tag <tagname> <commit_id>`
+
+还可以创建带有说明的标签，用-a指定标签名，-m指定说明文字：
+
+`git tag -a <tag_name> -m "<commit_msg>" <commit_id>`
+`git show <tagname>`用来查看标签信息
+
+删除标签
+
+`git tag -d <tag_name>`
+
+推送标签
+
+`git push origin <tagname>`
+
+一次性推送全部尚未推送到远程的本地标签
+
+`git push origin --tags`
+
+删除远程标签，先删除本地标签，然后删除远程标签
+
+`git push origin :refs/tags/<tagname>`
+
+## git配置
+
+### gitignore
+
+.gitignore文件写法
+
+```js
+// 文件名以.pyc， .pyo, .pyd结尾的文件
+*.py[cod]
+// 文件名以.so 结尾的文件
+*.so
+// dist文件夹
+dist
+```
+
+强行添加被.gitignore忽略的文件
+
+`git add -f App.so`
+
+你发现，可能是.gitignore写得有问题，需要找出来到底哪个规则写错了，可以用git check-ignore命令检查：
+
+`git check-ignore -v App.so`
+
+## git配置文件
+
+每个仓库的配置文件路径是`.git/config`
+
+当前用户的Git配置文件放在用户主目录下的一个隐藏文件`.gitconfig`中
