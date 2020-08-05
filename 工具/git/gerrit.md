@@ -46,3 +46,12 @@ Gerrit相对Git提供了一个特有的命名空间“refs/for/”用来定义�
 
 
 
+## gerrit 提交
+
+`git branch`
+`git checkout master`
+`git pull`
+`git checkout hujin`
+`git rebase -i master`
+`git commit --amend`
+`git-review -y`
