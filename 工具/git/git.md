@@ -175,6 +175,11 @@ rebase操作可以把本地未push的分叉提交历史整理成直线，使得�
 那么我们继续执行`git rebase`将本地的master更改为基于刚刚pull过来的的版本，这样刚刚的commit就是
 在现在远程版本的基础上的修改，然后`git log`，提交历史就是直线,push到远程之后提交历史也是直线
 
+`git rebase master` 将当前分支的变基为本地master的当前HEAD
+
+`git rebase -i HEAD~2` 合并最近两次提交
+然后会弹出编辑器，按指示操作即可
+
 ## 标签
 
 发布一个版本时，我们通常先在版本库中打一个标签（tag）
