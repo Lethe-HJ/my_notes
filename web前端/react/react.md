@@ -485,8 +485,8 @@ class XiaojiejieItem  extends Component { //cc
        this.handleClick=this.handleClick.bind(this)
    }
 
-    render() { 
-        return ( 
+    render() {
+        return (
             <div onClick={this.handleClick}>
                 {this.props.content}
             </div>
