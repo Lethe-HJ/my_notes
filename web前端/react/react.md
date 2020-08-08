@@ -1,12 +1,45 @@
 # react
 
+## 介绍react
+
+ReactJS是由Facebook在2013年5月推出的一款JS前端开源框架,推出式主打特点式函数式编程风格。值得一说的是，到目前为止ReactJS是世界上使用人数最多的前端框架,它拥有全球最健全的文档和社区体系。我们这里学习的是React Fiber版本，也就是React16这个版本
+
 ## react的安装
+
+[下载安装node](http://nodejs.cn/)
 
 `npm config set registry https://registry.npm.taobao.org`  设置成淘宝npm
 `npm install -g create-react-app` 安装官方脚手架
 `create-react-app test1` 初始化
 
 执行`cd test1`和`npm start` 就能在localhost:3000看到默认的react页面
+
+## 项目目录介绍
+
+### 根目录
+
+`README.md`: 这个文件主要作用就是对项目的说明
+`package.json`: 这个文件是webpack配置和项目包管理文件，项目中依赖的第三方包（包的版本）和一些常用命令配置都在这个里边进行配置
+`package-lock.json`: 锁定安装时的版本号，并且需要上传到git，以保证其他人再npm install 时大家的依赖能保证一致。
+`gitignore`: 这个是git的选择性上传的配置文件，比如一会要介绍的node_modules文件夹，就需要配置不上传。
+`node_modules`: 这个文件夹就是我们项目的依赖包
+`public`: 公共文件，里边有公用模板和图标等一些东西。
+`src`: 主要代码编写文件夹
+
+### public
+
+这个文件都是一些项目使用的公共文件
+`favicon.ico`: 这个是网站或者说项目的图标，一般在浏览器标签页的左上角显示。
+`index.html`: 首页的模板文件，我们可以试着改动一下，就能看到结果。
+`mainifest.json`: 移动端配置文件，这个会在以后的课程中详细讲解。
+
+### src
+
+这个目录里边放的是我们编写的代码
+`index.js`: 这个就是项目的入口文件
+`index.css`: 这个是index.js里的CSS文件。
+`app.js`: 这个文件相当于一个方法模块，也是一个简单的模块化编程。
+`serviceWorker.js`: 这个是用于写移动端开发的，PWA必须用到这个文件，有了这个文件，就相当于有了离线浏览的功能。
 
 ## hello world
 
@@ -16,7 +49,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import App from './App';
-ReactDOM.render(<App />, document.querySelector('#root'));
+ReactDOM.render(<App />,document.getElementById('root'))
 ```
 
 新建App.js
@@ -32,6 +65,21 @@ class App extends Component{
     }
 }
 export default App;
+```
+
+## JSX
+
+```js
+<ul className="my-list">
+    <li>JSPang.com</li>
+    <li>I love React</li>
+</ul>
+
+// 上述代码相当于
+
+var child1 = React.createElement('li', null, 'JSPang.com');
+var child2 = React.createElement('li', null, 'I love React');
+var root = React.createElement('ul', { className: 'my-list' }, child1, child2);
 ```
 
 ## 基本语法
@@ -83,6 +131,30 @@ export class Welcome2 extends React.Component {
 }
 ```
 
+React要求必须在一个组件的最外层进行包裹,
+但是在做Flex布局的时候外层不能有包裹元素,
+这时我们可以使用`<Fragment>`标签,需要先进行引入
+如下所示:
+
+```js
+import React,{Component,Fragment } from 'react'
+
+class Xiaojiejie extends Component{
+    render(){
+        return  (
+            <Fragment>
+               <div><input /> <button> 增加服务 </button></div>
+               <ul>
+                   <li>头部按摩</li>
+               </ul>
+            </Fragment>
+        )
+    }
+}
+export default Xiaojiejie
+
+```
+
 在App.js中添加
 
 ```js
@@ -100,8 +172,15 @@ import React, { Component } from 'react'
 
 export default class Clock extends Component {
     //状态固定名字
-    state = {
+    // state = {
+    //     date: new Date()
+    // }
+
+    constructor(props){
+      super(props) //调用父类的构造函数，固定写法
+      this.state={
         date: new Date()
+      }
     }
 
     componentDidMount(){
@@ -150,6 +229,12 @@ this.setState(prevState => {
     }
 }))
 
+// 或者这样
+// this.setState({
+//     counter:  1
+//   }
+// ))
+
 
 ```
 
@@ -168,6 +253,37 @@ this.setState(prevState => {
 ```
 
 ### 事件
+
+```js
+<button onClick={this.addList.bind(this)}> 增加服务 </button>
+```
+
+```js
+//增加服务的按钮响应方法
+addList(){
+    this.setState({
+        list:[...this.state.list,this.state.inputValue]
+    })
+}
+```
+
+```js
+<ul>
+  {
+    this.state.list.map((item,index)=>{
+        return (
+            <li
+                key={index+item}
+                onClick={this.deleteItem.bind(this,index)}
+            >
+            {/* 正确注释的写法 */}
+                {item}
+            </li>
+        )
+    })
+  }
+</ul>  
+```
 
 在components文件夹下新建CartSample.js文件
 
@@ -301,7 +417,198 @@ function Cart({ data, minus, add }) {
   );
 }
 
+```
 
+## 父子组件传值
+
+### 父组件向子组件传值
+
+```js
+<XiaojiejieItem content={item} />
+```
+
+```js
+import React, { Component } from 'react'; //imrc
+class XiaojiejieItem  extends Component { //cc
+
+    render() {
+        return (
+            <div>{this.props.content}</div>
+         );
+    }
+}
+
+export default XiaojiejieItem;
+```
+
+注意:父组件传递过来的属性只能读,不能写(单向数据流)
+
+### 子组件使用父组件的方法
+
+```js
+<ul>
+  {
+    this.state.list.map((item,index)=>{
+      return (
+        <XiaojiejieItem 
+        key={index+item}  
+        content={item}
+        index={index}
+        //关键代码-------------------start
+        deleteItem={this.deleteItem.bind(this)}
+        //关键代码-------------------end
+        />
+      )
+    })
+  }
+</ul>
+```
+
+在子组件里就可以直接调用
+
+```js
+handleClick(){
+    this.props.deleteItem(this.props.index)
+}
+```
+
+## PropTypes
+
+```js
+import React, { Component } from 'react'; //imrc
+import PropTypes from 'prop-types'
+
+class XiaojiejieItem  extends Component { //cc
+
+   constructor(props){
+       super(props)
+       this.handleClick=this.handleClick.bind(this)
+   }
+
+    render() { 
+        return ( 
+            <div onClick={this.handleClick}>
+                {this.props.content}
+            </div>
+        );
+    }
+
+    handleClick(){
+
+        this.props.deleteItem(this.props.index)
+    }
+
+}
+ //--------------主要代码--------start
+XiaojiejieItem.propTypes={
+    content:PropTypes.string,
+    deleteItem:PropTypes.func,
+    index:PropTypes.number
+}
+ //--------------主要代码--------end
+export default XiaojiejieItem;
+```
+
+必传值
+avname:PropTypes.string.isRequired
+
+默认值
+XiaojiejieItem.defaultProps = {
+    name:'666'
+}
+
+## ref
+
+```js
+<input
+  id="jspang"
+  className="input"
+  value={this.state.inputValue}
+  onChange={this.inputChange.bind(this)}
+  //关键代码——----------start
+  ref={(input)=>{this.input=input}}
+  //关键代码------------end
+  />
+```
+
+```js
+inputChange(){
+  this.setState({
+    inputValue:this.input.value
+  })
+}
+```
+
+## 生命周期
+
+Initialization:初始化阶段。
+Mounting: 挂载阶段。
+Updation: 更新阶段。
+Unmounting: 销毁阶段
+
+### Mounting阶段
+
+Mounting阶段叫挂载阶段，伴随着整个虚拟DOM的生成，它里边有三个小的生命周期函数，分别是：
+
+`componentWillMount` : 在组件即将被挂载到页面的时刻执行。
+`render`: 页面state或props发生变化时执行。
+`componentDidMount` : 组件挂载完成时被执行。
+
+### Updation阶段
+
+`shouldComponentUpdate`
+函数会在组件更新之前，自动被执行
+它要求返回一个布尔类型的结果，必须有返回值
+如果你返回了false，这组件就不会进行更新了
+
+`componentWillUpdate`
+在组件更新之前，但shouldComponenUpdate之后被执行。但是如果shouldComponentUpdate返回false，这个函数就不会被执行了。
+
+`componentDidUpdate`
+在组件更新之后执行，它是组件更新的最后一个环节
+
+`componentWillReceiveProps`
+子组件接收props时执行
+子组件接收到父组件传递过来的参数，父组件render函数重新被执行，这个生命周期就会被执行。
+也就是说这个组件第一次存在于Dom中，函数是不会被执行的;
+如果已经存在于Dom中，函数才会被执行
+
+### Unmount阶段
+
+`componentWillUnmount`
+组件从页面中删除的时候执行
+
+### 利用生命周期优化代码
+
+```js
+shouldComponentUpdate(nextProps,nextState){
+  if(nextProps.content !== this.props.content){
+      return true
+  }else{
+      return false
+  }
+}
+```
+
+
+## 一些坑
+
+react 中的标签中的style class名应该为`className`
+使用`dangerouslySetInnerHTML`可以解析HTML字符串
+label标签的for在react中应该为htmlfor
+setState是一个异步函数,但是setState方法提供了一个回调函数
+
+```js
+addList(){
+    this.setState({
+        list:[...this.state.list,this.state.inputValue],
+        inputValue:''
+        //关键代码--------------start
+    },()=>{
+        console.log(this.ul.querySelectorAll('div').length)
+    })
+    //关键代码--------------end
+}
 ```
 
 ## 按需加载 与 ant design
@@ -1202,4 +1509,151 @@ export const login = () => dispatch => {
     dispatch({ type: "login" });
   }, 2000);
 };
+```
+
+## 动画
+
+```css
+.show{ opacity: 1; transition:all 1.5s ease-in;}
+.hide{opacity: 0; transition:all 1.5s ease-in;}
+
+```
+
+```css
+.show{ animation:show-item 2s ease-in forwards; }
+.hide{ animation:hide-item 2s ease-in forwards; }
+
+@keyframes hide-item{
+    0% {
+        opacity:1;
+        color:yellow;
+    }
+    50%{
+        opacity: 0.5 ;
+        color:red;
+    }
+    100%{
+        opacity:0;
+        color: green;
+    }
+}
+
+@keyframes show-item{
+    0% {
+        opacity:0;
+        color:yellow;
+    }
+    50%{
+        opacity: 0.5 ;
+        color:red;
+    }
+    100%{
+        opacity:1;
+        color: green;
+    }
+}
+```
+
+### react-transition-group
+
+`npm install react-transition-group --save`
+
+```js
+import { CSSTransition } from 'react-transition-group'
+render() {
+  return (
+    <div>
+      <CSSTransition 
+        in={this.state.isShow}   //用于判断是否出现的状态
+        timeout={2000}           //动画持续时间
+        classNames="boss-text"   //className值，防止重复
+        unmountOnExit // 元素退场时，自动把DOM也删除
+      >
+        <div>BOSS级人物-孙悟空</div>
+      </CSSTransition>
+      <div><button onClick={this.toToggole}>召唤Boss</button></div>
+    </div>
+    );
+}
+
+.input {border:3px solid #ae7000}
+
+.boss-text-enter{
+    opacity: 0;
+}
+.boss-text-enter-active{
+    opacity: 1;
+    transition: opacity 2000ms;
+
+}
+.boss-text-enter-done{
+    opacity: 1;
+}
+.boss-text-exit{
+    opacity: 1;
+}
+.boss-text-exit-active{
+    opacity: 0;
+    transition: opacity 2000ms;
+
+}
+.boss-text-exit-done{
+    opacity: 0;
+}
+```
+
++ xxx-enter: 进入（入场）前的CSS样式；
++ xxx-enter-active:进入动画直到完成时之前的CSS样式;
++ xxx-enter-done:进入完成时的CSS样式;
++ xxx-exit:退出（出场）前的CSS样式;
++ xxx-exit-active:退出动画知道完成时之前的的CSS样式。
++ xxx-exit-done:退出完成时的CSS样式。
+
+```js
+import {CSSTransition , TransitionGroup} from 'react-transition-group'
+
+<ul ref={(ul)=>{this.ul=ul}}>
+  <TransitionGroup>
+  {
+    this.state.list.map((item,index)=>{
+      return (
+        <XiaojiejieItem
+        key={index+item}  
+        content={item}
+        index={index}
+        deleteItem={this.deleteItem.bind(this)}
+        />
+      )
+    })
+  }
+  </TransitionGroup>
+</ul>
+```
+
+```js
+<ul ref={(ul)=>{this.ul=ul}}>
+  <TransitionGroup>
+  {
+    this.state.list.map((item,index)=>{
+      return (
+        <CSSTransition
+          timeout={1000}
+          classNames='boss-text'
+          unmountOnExit
+          appear={true}
+          key={index+item}  
+        >
+          <XiaojiejieItem
+          content={item}
+          index={index}
+          deleteItem={this.deleteItem.bind(this)}
+          />
+        </CSSTransition>
+      )
+    })
+  }
+  </TransitionGroup>
+</ul>  
+<Boss />
+</Fragment>
 ```
