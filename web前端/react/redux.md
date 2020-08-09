@@ -18,10 +18,11 @@ store
 
 ```js
 //store/index.js
-import { createStore } from 'redux'  // 引入createStore方法
+import { createStore } from 'redux' // 引入createStore方法
 import reducer from './reducer'
-const store = createStore()          // 创建数据存储仓库
-export default store                 //暴露出去
+const store = createStore(reducer, window.__REDUX_DEVTOOLS_EXTENSION__ && window.__REDUX_DEVTOOLS_EXTENSION__()) // 创建数据存储仓库
+// 上述第二个参数是用于Redux Dev Tools调试
+export default store //暴露出去
 ```
 
 reducer
@@ -41,44 +42,74 @@ export default (state = defaultState,action)=>{
     newState.inputValue = action.value
     return newState
   }
+  if(action.type === 'addItem' ){ //根据type值，编写业务逻辑
+    let newState = JSON.parse(JSON.stringify(state))
+    newState.list.push(newState.inputValue)  //push新的内容到列表中去
+    newState.inputValue = ''
+    return newState
+  }
   return state
 }
 ```
 
-## 获取store值
+## 操作store值
 
 ```js
-// 在construtor中
-this.state=store.getState();
+// TodoList.js
+import React, { Component } from 'react';
+import 'antd/dist/antd.css'
+import { Input , Button , List } from 'antd'
+import store from './store'
 
-this.state.inputValue
-```
-
-安装了`Redux Dev Tools`后可以在store/index.js中添加以下代码
-
-```js
-window.__REDUX_DEVTOOLS_EXTENSION__ && window.__REDUX_DEVTOOLS_EXTENSION__()) // 创建数据存储仓库
-```
-
-## 修改store值
-
-```js
-// constructor
-this.storeChange = this.storeChange.bind(this)  //转变this指向
-store.subscribe(this.storeChange) //订阅Redux的状态
-
-// 定义storeChange方法
-storeChange(){
-  this.setState(store.getState())
-}
-
-changeInputValue(e){
-  const action ={
-    type:'changeInput',
-    value:e.target.value
+class TodoList extends Component {
+  constructor(props){
+    super(props)
+    this.state=store.getState();
+    this.changeInputValue= this.changeInputValue.bind(this)
+    this.storeChange = this.storeChange.bind(this)  //转变this指向
+    this.clickBtn = this.clickBtn.bind(this)
+    store.subscribe(this.storeChange) //订阅Redux的状态
   }
-  store.dispatch(action)
+  render() {
+    return ( 
+      <div style={{margin:'10px'}}>
+        <div>
+          <Input
+            placeholder={this.state.inputValue}
+            style={{ width:'250px', marginRight:'10px'}}
+            onChange={this.changeInputValue}
+          />
+          <Button type="primary" onClick={this.clickBtn}>增加</Button>
+        </div>
+        <div style={{margin:'10px',width:'300px'}}>
+          <List
+            bordered
+            dataSource={this.state.list}
+            renderItem={item=>(<List.Item>{item}</List.Item>)}
+          />
+        </div>
+      </div>
+    );
+  }
+  
+  changeInputValue(e){
+    const action ={
+      type:'changeInput',
+      value:e.target.value
+    }
+    store.dispatch(action)
+  }
+  
+  storeChange(){
+    this.setState(store.getState())
+  }
+
+  clickBtn(){
+    const action = { type:'addItem'}
+    store.dispatch(action)
+  }
 }
+export default TodoList;
 ```
 
 store只是一个仓库，它并没有管理能力，它会把接收到的action自动转发给Reducer
@@ -87,3 +118,134 @@ reducer中
 state: 指的是原始仓库里的状态
 action: 指的是action新传递的状态
 
+## 优化结构
+
+我们优化一下代码结构
+先把action的type拆出去
+
+```js
+//actionTypes.js
+export const  CHANGE_INPUT = 'changeInput'
+export const  ADD_ITEM = 'addItem'
+export const  DELETE_ITEM = 'deleteItem'
+```
+
+再把action拆出去
+
+```js
+// actionCreator.js
+import { CHANGE_INPUT , ADD_ITEM , DELETE_ITEM } from './actionTypes'
+
+export const changeInputAction = value => ({
+  type: CHANGE_INPUT,
+  value: value
+})
+
+export const addItemAction = () => ({ type: ADD_ITEM })
+
+export const deleteItemAction = index => ({
+  type: DELETE_ITEM,
+  index
+})
+```
+
+```js
+// TodoList.js
+import React, { Component } from 'react';
+import 'antd/dist/antd.css'
+import { Input , Button , List } from 'antd'
+import store from './store'
+import { changeInputAction, addItemAction, deleteItemAction } from './store/actionCreators' 
+
+class TodoList extends Component {
+  constructor(props){
+    super(props)
+    this.state=store.getState();
+    this.changeInputValue= this.changeInputValue.bind(this)
+    this.storeChange = this.storeChange.bind(this)  //转变this指向
+    this.clickBtn = this.clickBtn.bind(this)
+    store.subscribe(this.storeChange) //订阅Redux的状态
+  }
+  render() {
+    return (
+      <div style={{margin:'10px'}}>
+        <div>
+          <Input
+            placeholder={this.state.inputValue}
+            style={{ width:'250px', marginRight:'10px'}}
+            onChange={this.changeInputValue}
+          />
+          <Button type="primary" onClick={this.clickBtn}>增加</Button>
+        </div>
+        <div style={{margin:'10px',width:'300px'}}>
+          <List
+            bordered
+            dataSource={this.state.list}
+            renderItem={(item, index)=>(<List.Item onClick={this.deleteItem.bind(this, index)}>{item}</List.Item>)}
+          />
+        </div>
+      </div>
+    );
+  }
+  
+  changeInputValue(e){
+    store.dispatch(changeInputAction(e.target.value))
+  }
+  
+  clickBtn(){
+    store.dispatch(addItemAction())
+  }
+
+  deleteItem (index) {
+    store.dispatch(deleteItemAction(index))
+  }
+
+  storeChange(){
+    this.setState(store.getState())
+  }
+}
+export default TodoList;
+```
+
+注意: reducer必须是纯函数
+
+Store必须是唯一的
+只有store能改变自己的内容，Reducer不能改变
+
+## 拆分UI
+
+```js
+// TodoList
+import React, { Component } from 'react';
+import 'antd/dist/antd.css'
+import { Input , Button , List } from 'antd'
+class TodoListUi extends Component {
+
+  render() {
+    return (
+      <div style={{margin:'10px'}}>
+        <div>
+          <Input  
+            style={{ width:'250px', marginRight:'10px'}}
+            onChange={this.props.changeInputValue}
+            value={this.props.inputValue}
+          />
+          <Button
+            type="primary"
+            onClick={this.props.clickBtn}
+          >增加</Button>
+        </div>
+        <div style={{margin:'10px',width:'300px'}}>
+          <List
+            bordered
+            dataSource={this.props.list}
+            renderItem={(item,index)=>(<List.Item onClick={(index)=>{this.props.deleteItem(index)}}>{item}</List.Item>)}
+          />
+        </div>
+      </div>
+    );
+  }
+}
+
+export default TodoListUi;
+```
