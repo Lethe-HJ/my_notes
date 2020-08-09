@@ -1,6 +1,8 @@
+# ts
+
 安装typescript
-npm install -g cnpm --registry=https//registry.npm.taobao.org
-cnpm install -g typescript
+`npm install -g cnpm --registry=https//registry.npm.taobao.org`
+`cnpm install -g typescript`
 tsc -v 验证
 
 编译ts成es5
