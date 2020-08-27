@@ -22,7 +22,7 @@ js引擎是单线程的，为了防止主线程阻塞，`Event loop`的方案应
 - 主线程之外，事件触发线程管理着一个任务队列，只要异步任务有了运行结果，就在任务队列之中放置一个事件。
 - 一旦执行栈中的所有同步任务执行完毕（此时JS引擎空闲），系统就会读取任务队列，将可运行的异步任务添加到可执行栈中，开始执行。
 
-![图片描述](Event loop.assets/bV31Xm)
+![图片描述](Event loop.assets/bV31Xm.png)
 
 ![img](Event loop.assets/1053223-20180831162152579-2034514663.png)
 
@@ -76,7 +76,7 @@ process.nextTick(Node.js 环境)
 
 如图：
 
-![图片描述](Event loop.assets/bVbpsFp)
+![图片描述](Event loop.assets/bVbpsFp.png)
 
 ### 例子
 

@@ -2,29 +2,43 @@
 
 jest对象会自动出现在每一个测试文件的作用域里，不需要去额外引入和定义
 
-## Mock Moudule
-
 [文档地址](https://jestjs.io/docs/en/24.x/jest-object)
+
+
+
+## `Mock Moudule`
+
+
 
 ### `jest.disableAutomock()`
 
 这个方法被调用后，就会使用模块的原始实现，而不是auto mock后的实现
 
+
+
 ### `jest.enableAutomock()`
 
 这个方法被调用后，就会使用模块auto mock后的实现
+
+
 
 ### `jest.genMockFromModule(moduleName)`
 
 这个方法会将给定模块自动mock
 
-#### 自动mock的行为
 
-函数： 创建一个新的mock function,没有正式的参数，被调用时返回undefined。 async函数也是一样。
-类: 创建新类， 维护原始类的接口， mock所有成员函数和属性
-对象: 创建一个深拷贝的对象，维护所有的键， 它们的值会被mock
-数组: 创建空数组，忽略原始值。
-原始数据类型： 创建与模块原始的属性具有相同原始值的属性
+
+#### `auto mock`
+
+
+
++ 函数： 创建一个新的mock function,没有正式的参数，被调用时返回undefined。 async函数也是一样。
++ 类: 创建新类， 维护原始类的接口， mock所有成员函数和属性
++ 对象: 创建一个深拷贝的对象，维护所有的键， 它们的值会被mock
++ 数组: 创建空数组，忽略原始值。
++ 原始数据类型： 创建与模块原始的属性具有相同原始值的属性
+
+
 
 Example:
 
@@ -82,7 +96,6 @@ class Api {
 
 export default Api;
 
-
 ```
 
 ```js
@@ -117,9 +130,10 @@ it('use genMockFromModule', async () => {
 > 来的 `axios.get` 而是发了真实的`axios`请求.
 > **结论**：在test块中模块只有在test块中显式调用才会使用mock后的实现。
 
-## `jest.mock`
+### `jest.mock`
 
 `jest.mock('axios')` 会使auto mock的axios模块代替原有的axios模块
+
 且jest会将`jest.mock`提升到代码块的顶部。
 
 ```js
@@ -368,11 +382,13 @@ const otherCopyOfMyModule = require('myModule');
 
 ```
 
-## Mock Function
+## `Mock Function`
+
+模拟函数也被称为'间谍', 它可以让你能监视到到其它代码对这个函数的调用信息。而不是仅仅测试它的输出。
 
 ### `jest.fn(implementation)`
 
-返回一个新的mock function， 你可以为它提供具体实现
+返回一个新的mock function。
 
 ```js
 const mockFn = jest.fn();
@@ -384,6 +400,18 @@ const returnsTrue = jest.fn(() => true);
 console.log(returnsTrue()); // true;
 
 ```
+
+你可以为它提供具体实现
+
+```js
+const mockFn = jest.fn((haha)=>{
+  return haha + 'world'
+})
+```
+
+如果没有提供具体实现，那么它将是一个类似这样的函数`function(){}`
+
+[jest.fn的Api](./mock Function.md)
 
 ### `jest.isMockFunction(fn)`
 
@@ -455,28 +483,87 @@ test('plays video', () => {
 
 
 
-## Mock timers
+## `Mock timers`
 
 
 
-### jest.useFakeTimers()
+### `jest.useFakeTimers()`
 
-使用假定时器
+使用假定时器。
+
+注意，使用这个API后，定时器就和系统时间没关系了。
+
+也就是说，如果你在这个定时器的回调函数中用了`new Date().getTime()`之类的获取当前时间，会获取到一个‘错误’的时间。
+
+如果你需要再回调函数用到获取当前时间，那么只能用`jest.useRealTimers()`这个API，然后耐心等待了。
 
 
 
-### jest.useRealTimers()
+### `jest.useRealTimers()`
 
 使用真实的定时器
 
 
 
-### jest.runAllTicks()
+### `jest.runAllTicks()`
 
-耗尽队列中的宏任务
+递归地执行完的微任务队列中的任务（通常是内部调用了`process.nextTick`的微任务）。
+
+`process.nextTick`是node中的定时器
 
 
 
-### jest.advanceTimersByTime(msToRun)
+### `jest.runAllTimers()`
 
-队列中的所有定时器都将向前推进指定时间
+递归地执行完队列中的定时器相关的宏任务和微任务（通常是内部调用了`process.nextTick`的微任务）。
+
+这个API可以达到同步的效果，后面紧跟着的断言不需要再等待之前的异步操作，
+
+因为异步操作的队列已经被执行完了。
+
+
+
+### `jest.advanceTimersByTime(msToRun)`
+
+执行完宏任务队列中和定时器相关的宏任务，当然也是递归的，如果新的定时器任务也在这个时间内被执行的话，新定时器任务也会被执行完。
+
+简单来说，这个API的效果就是将当前所有已经注册过的定时器都将向前推进指定时间。（在此过程中新注册的定时器也会被推进剩余的时间）
+
+
+
+### `jest.runOnlyPendingTimers()`
+
+只执行完当前在宏任务队列中的定时器任务，如果这个定时器任务新建了新的定时器，那么这个新的定时器任务不会被执行。
+
+
+
+### `jest.advanceTimersToNextTimer(steps)`
+
+推进时间直到后面的第steps个定时器执行
+
+### `jest.clearAllTimers()`
+
+移除任何处于挂起状态的定时器
+
+### `jest.getTimerCount()`
+
+返回仍未执行的假定时器的数量
+
+
+
+## 其它
+
+### `jest.setTimeout(timeout)`
+
+阻塞指定的时间
+
+### `jest.retryTimes()`
+
+重试test，直到测试通过或次数用完
+
+```js
+jest.retryTimes(3);
+test('will fail', () => {
+  expect(true).toBe(false);
+});
+```
