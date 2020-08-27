@@ -120,6 +120,7 @@ it('use genMockFromModule', async () => {
 ## `jest.mock`
 
 `jest.mock('axios')` 会使auto mock的axios模块代替原有的axios模块
+
 且jest会将`jest.mock`提升到代码块的顶部。
 
 ```js
