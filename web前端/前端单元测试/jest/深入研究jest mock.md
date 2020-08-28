@@ -237,7 +237,6 @@ describe('Switch.vue', () => {
     }, 2000);
   });
 });
-
 ```
 
 与genMockFromModule不同的是，jest.mock可以mock外部导入的模块
