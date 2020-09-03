@@ -8,11 +8,7 @@
 
 #### `jest.genMockFromModule(moduleName)`
 
-这个方法会将给定模块自动mock
-
-##### `auto mock`
-
-
+这个方法会将给定模块自动mock，自动mock的行为如下:
 
 + 函数： 创建一个新的mock function,没有正式的参数，被调用时返回undefined。 async函数也是一样。
 + 类: 创建新类， 维护原始类的接口， mock所有成员函数和属性
@@ -245,6 +241,39 @@ describe('Switch.vue', () => {
 
 与genMockFromModule不同的是，jest.mock可以mock外部导入的模块
 
+### `jest.requireActual`
+
+```js
+// createUser.js
+import fetch from 'node-fetch';
+
+export const createUser = async () => {
+  const response = await fetch('http://website.com/users', {method: 'POST'});
+  const userId = await response.text();
+  return userId;
+};
+```
+
+```js
+import fetch from 'node-fetch';
+import {createUser} from './createUser';
+
+jest.mock('node-fetch');
+const {Response} = jest.requireActual('node-fetch');
+
+test('createUser calls fetch with the right args and returns the user id', async () => {
+  fetch.mockReturnValue(Promise.resolve(new Response('4')));
+
+  const userId = await createUser();
+
+  expect(fetch).toHaveBeenCalledTimes(1);
+  expect(fetch).toHaveBeenCalledWith('http://website.com/users', {
+    method: 'POST',
+  });
+  expect(userId).toBe('4');
+});
+
+```
 
 
 ### `模拟Function`
@@ -420,6 +449,18 @@ describe('Switch.vue', () => {
   });
 });
 
+```
+
+这样直接mock api封装的返回值，很方便，但测试无法覆盖到封装的api文件中。因此建议这样
+
+
+
+```js
+import httpRequest from '@/http/http.request.js'
+const anxisGet = jest.spyOn(httpRequest.instance, 'get')
+
+//使用时
+anxisGet.mockResolvedValueOnce(data1).mockResolvedValueOnce(data2);
 ```
 
 
@@ -1128,4 +1169,125 @@ describe('ListsNew.vue', () => {
 ```
 
 
+
+## 如何debug
+
+`cnpm install --save-dev babel-jest @babel/core @babel/preset-env babel-plugin-transform-es2015-modules-commonjs`
+
+```js
+// babel.config.js
+module.exports = {
+  presets: [
+      [
+          "@babel/preset-env",
+          {
+              targets: {
+                  node: "current"
+              }
+          }
+      ]
+  ],
+  plugins: ["transform-es2015-modules-commonjs"]
+};
+
+
+```
+
+```js
+//.vscode/launch.json
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug Jest Tests",
+      "type": "node",
+      "request": "launch",
+      "runtimeArgs": [
+        "--inspect-brk",
+        "${workspaceRoot}/node_modules/jest/bin/jest.js",
+        "--runInBand"
+      ],
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "port": 9229
+    }
+  ]
+}
+```
+
+
+
+```js
+{
+  "name": "koui-new",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "serve": "vue-cli-service serve",
+    "build": "vue-cli-service build",
+    "test:unit": "vue-cli-service test:unit",
+    "test:e2e": "vue-cli-service test:e2e",
+    "lint": "vue-cli-service lint",
+    "debugger": "./node_modules/.bin/babel-node --inspect-brk ./node_modules/jest/bin/jest.js --runInBand"
+  },
+  "dependencies": {
+    "animated-number-vue": "^0.1.5",
+    "axios": "0.18.0",
+    "babel-runtime": "^6.26.0",
+    "echarts": "^4.2.0-rc.2",
+    "element-ui": "^2.4.11",
+    "font-awesome": "4.7.0",
+    "lodash": "^4.17.19",
+    "normalize.css": "7.0.0",
+    "path-to-regexp": "2.4.0",
+    "promise.prototype.finally": "^3.1.2",
+    "qrcode.vue": "^1.7.0",
+    "vue": "~2.6.11",
+    "vue-cookies": "^1.5.13",
+    "vue-router": "~3.3.4",
+    "vuex": "~3.4.0"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.0.0-beta.40",
+    "@babel/core": "^7.11.5",
+    "@babel/plugin-transform-runtime": "^7.5.5",
+    "@babel/preset-env": "^7.11.5",
+    "@vue/cli-plugin-babel": "^3.2.0",
+    "@vue/cli-plugin-eslint": "^4.4.1",
+    "@vue/cli-plugin-unit-jest": "^4.4.6",
+    "@vue/cli-service": "^3.2.0",
+    "@vue/eslint-config-airbnb": "^5.0.2",
+    "@vue/eslint-config-prettier": "^6.0.0",
+    "@vue/test-utils": "^1.0.3",
+    "babel-jest": "^26.3.0",
+    "babel-plugin-transform-es2015-modules-commonjs": "^6.26.2",
+    "eslint": "^6.7.2",
+    "eslint-plugin-prettier": "^3.1.3",
+    "eslint-plugin-vue": "^6.2.2",
+    "husky": "^4.2.5",
+    "jest-html-reporter": "^3.1.3",
+    "lint-staged": "^10.2.8",
+    "mockjs": "^1.1.0",
+    "prettier": "^2.0.5",
+    "sass": "^1.26.8",
+    "sass-loader": "^7.1.0",
+    "vue-eslint-parser": "^7.1.0",
+    "vue-template-compiler": "^2.5.17"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  },
+  "lint-staged": {
+    "src/**/*{.js,.vue}": [
+      "npm run lint"
+    ],
+    "src/**/*{.css,.scss}": [
+      "prettier --write"
+    ]
+  }
+}
+
+```
 
