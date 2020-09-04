@@ -1172,8 +1172,11 @@ describe('ListsNew.vue', () => {
 
 ## 如何debug
 
+<<<<<<< HEAD
 `cnpm install --save-dev babel-jest @babel/core @babel/preset-env babel-plugin-transform-es2015-modules-commonjs`
 
+=======
+>>>>>>> c9e449741401e70f8664d2e13a5b94d1f3cde344
 ```js
 // babel.config.js
 module.exports = {
@@ -1214,7 +1217,6 @@ module.exports = {
   ]
 }
 ```
-
 
 
 ```js
@@ -1290,4 +1292,4 @@ module.exports = {
 }
 
 ```
-
+`cnpm install --save-dev babel-jest @babel/core @babel/preset-env babel-plugin-transform-es2015-modules-commonjs`
