@@ -1,8 +1,9 @@
+# 深入研究jest mock
+
 ## 如何模拟
 
 为什么要模拟？
 因为有些模块，我们无法在单元测试中直接使用，比如`axios`、 `echarts`等。这个时候我们就需要在测试文件中模拟这些模块的内部实现，返回值等等。在不需要实际运行环境的情况下，达到单元测试的目的。
-
 
 ###　`模拟Module`
 
@@ -15,8 +16,6 @@
 + 对象: 创建一个深拷贝的对象，维护所有的键， 它们的值会被auto mock
 + 数组: 创建空数组，忽略原始值。
 + 原始数据类型： 创建与模块原始的属性具有相同原始值的属性
-
-
 
 Example:
 
@@ -275,7 +274,6 @@ test('createUser calls fetch with the right args and returns the user id', async
 
 ```
 
-
 ### `模拟Function`
 
 模拟函数也被称为'间谍', 它可以让你能监视到到其它代码对这个函数的调用信息。而不是仅仅测试它的输出。
@@ -304,8 +302,6 @@ const mockFn = jest.fn((haha)=>{
 ```
 
 如果没有提供具体实现，那么它将是一个类似这样的函数`function(){}`
-
-[jest.fn的Api](./mock Function.md)
 
 
 
@@ -341,7 +337,6 @@ const video = {
 module.exports = video;
 ```
 
-
 ```js
 const video = require('./video');
 
@@ -365,10 +360,6 @@ test('plays video', () => {
   spy.mockRestore();
 });
 ```
-
-
-
-
 
 ```js
 import { shallowMount, createLocalVue } from '@vue/test-utils';
@@ -453,8 +444,6 @@ describe('Switch.vue', () => {
 
 这样直接mock api封装的返回值，很方便，但测试无法覆盖到封装的api文件中。因此建议这样
 
-
-
 ```js
 import httpRequest from '@/http/http.request.js'
 const anxisGet = jest.spyOn(httpRequest.instance, 'get')
@@ -462,8 +451,6 @@ const anxisGet = jest.spyOn(httpRequest.instance, 'get')
 //使用时
 anxisGet.mockResolvedValueOnce(data1).mockResolvedValueOnce(data2);
 ```
-
-
 
 #### `mockFn.mockImplementation(fn)`
 
@@ -484,8 +471,6 @@ b === 43; // true
 mockFn.mock.calls[0][0] === 0; // true
 mockFn.mock.calls[1][0] === 1; // true
 ```
-
-
 
 ```js
 // SomeClass.js
@@ -509,8 +494,6 @@ console.log('Calls to m: ', mMock.mock.calls);
 
 ```
 
-
-
 #### `mockFn.mockImplementationOnce(fn)`
 
 与`mockFn.mockImplementation(fn)`不一样的是这个api被使用一次，就会将实现回归到原来的状态。
@@ -526,8 +509,6 @@ myMockFn((err, val) => console.log(val)); // true
 myMockFn((err, val) => console.log(val)); // false
 ```
 
-
-
 #### `mockFn.mockReturnValue(value)`
 
 模拟返回值
@@ -539,8 +520,6 @@ mock(); // 42
 mock.mockReturnValue(43);
 mock(); // 43
 ```
-
-
 
 #### `mockFn.mockResolvedValue(value)`
 
@@ -558,8 +537,6 @@ test('async test', async () => {
 });
 
 ```
-
-
 
 #### `mockFn.mockRejectedValue(value)`
 
@@ -580,14 +557,11 @@ test('async test', async () => {
 
 ```
 
-
-
 ### `模拟Timer`
 
 原生的定时器函数(如：`setTimeout`, `setInterval`, `clearTimeout`, `clearInterval`)并不是很方便测试，因为程序需要等待相应的延时。
 
 jest给我们提供了可以控制时间流逝的定时器
-
 
 ```js
 // timerGame.js
@@ -605,8 +579,7 @@ module.exports = timerGame;
 
 ```
 
-#### ` jest.runAllTimers()`
-
+#### `jest.runAllTimers()`
 
 ```js
 test('calls the callback after 1 second', () => {
@@ -688,7 +661,7 @@ describe('infiniteTimerGame', () => {
 
 ```
 
-#### `jeste. advancertimersbytime (msToRun)`
+#### `jeste.advancertimersbytime (msToRun)`
 
 所有通过setTimeout() 或setInterval() 而处于任务队列中等待中的“宏任务”和一切其他应该在本时间片中被执行的东西都会被执行
 
@@ -724,75 +697,6 @@ it('calls the callback after 1 second via advanceTimersByTime', () => {
   // 到这里，所有的定时器回调都应该被执行了！
   expect(callback).toBeCalled();
   expect(callback).toHaveBeenCalledTimes(1);
-});
-
-```
-
-
-
-###  `模拟ES6 Class`
-
-
-
-```js
-// sound-player-consumer.js
-import SoundPlayer from './sound-player';
-
-export default class SoundPlayerConsumer {
-  static players = [];
-
-  static closeAllSoundPlayer(){
-    SoundPlayerConsumer.players = [];
-  }
-  
-  constructor(favor) {
-    this.favor = favor;
-    this.soundPlayer = new SoundPlayer();
-    SoundPlayerConsumer.players.push(this.soundPlayer)
-  }
-
-  playSomethingCool() {
-    const coolSoundFileName = 'song.mp3';
-    this.soundPlayer.playSoundFile(coolSoundFileName);
-  }
-}
-```
-
-
-
-```js
-import SoundPlayer from './sound-player';
-import SoundPlayerConsumer from './sound-player-consumer';
-jest.mock('./sound-player'); // SoundPlayer is now a mock constructor
-
-beforeEach(() => {
-  // Clear all instances and calls to constructor and all methods:
-  SoundPlayer.mockClear();
-});
-
-it('We can check if the consumer called the class constructor', () => {
-  const soundPlayerConsumer = new SoundPlayerConsumer();
-  expect(SoundPlayer).toHaveBeenCalledTimes(1);
-});
-
-it('We can check if the consumer called a method on the class instance', () => {
-  // Show that mockClear() is working:
-  expect(SoundPlayer).not.toHaveBeenCalled();
-
-  const soundPlayerConsumer = new SoundPlayerConsumer();
-  // Constructor should have been called again:
-  expect(SoundPlayer).toHaveBeenCalledTimes(1);
-
-  const coolSoundFileName = 'song.mp3';
-  soundPlayerConsumer.playSomethingCool();
-
-  // mock.instances is available with automatic mocks:
-  const mockSoundPlayerInstance = SoundPlayer.mock.instances[0];
-  const mockPlaySoundFile = mockSoundPlayerInstance.playSoundFile;
-  expect(mockPlaySoundFile.mock.calls[0][0]).toEqual(coolSoundFileName);
-  // Equivalent to above check:
-  expect(mockPlaySoundFile).toHaveBeenCalledWith(coolSoundFileName);
-  expect(mockPlaySoundFile).toHaveBeenCalledTimes(1);
 });
 
 ```
@@ -834,6 +738,7 @@ describe('测试fibonacci函数', ()=>{
   })
 })
 ```
+
 
 
 ### 测试ES6的类
@@ -931,287 +836,298 @@ it('跟踪类对其它类方法的调用', () => {
 ### 测试组件
 
 ```js
-import { createLocalVue, mount } from '@vue/test-utils';
+import httpRequest from '@/http/http.request.js';
+import { mount, shallowMount, createLocalVue } from '@vue/test-utils';
+import Switch from '@/views/watch/resource_usage/Switch.vue';
 import ElementUI from 'element-ui';
-import Vuex from 'vuex';
-import * as ServersApi from '@/api/check/Servers';
-// 接口模拟数据
-import listData from '@tests/unit/mock/check/Servers';
-import ListsNew from './ListsNew';
+import { data00, data01, data10, data11 } from './switch.data.json';
 
-describe('ListsNew.vue', () => {
-  let wrapper;
-  let $table;
-  let $tr;
+const localVue = createLocalVue();
+localVue.use(ElementUI);
+localVue.prototype.$echarts = {
+  init: (elem) => ({
+    chartElem: elem,
+    showLoading: jest.fn(),
+    setOption: jest.fn(),
+    hideLoading: jest.fn(),
+  }),
+};
+const anxiosGet = jest.spyOn(httpRequest.instance, 'get');
 
-  const localVue = createLocalVue();
-  localVue.use(ElementUI);
-  localVue.use(Vuex);
-
-  // 模拟store
-  const store = new Vuex.Store({
-    state: {},
-    mutations: {
-      saveSwitchMac: jest.fn(),
-    },
+describe('测试组件挂载时发出的两个get请求', () => {
+  let wrapper = null;
+  beforeAll(async () => {
+    anxiosGet.mockResolvedValueOnce(data00).mockResolvedValueOnce(data10);
+    wrapper = shallowMount(Switch, {
+      localVue,
+    });
+    await wrapper.vm.$nextTick();
   });
 
-  // mock ServersApi函数，返回模拟值
-  jest.spyOn(ServersApi, 'getInfoAll').mockResolvedValue(listData);
+  it('组件挂载时发出的 getThroughputTopNData 请求参数正确', () => {
+    expect(anxiosGet.mock.calls[0][1].params).toEqual({
+      last_minutes: 1,
+      n: 5,
+    });
+  });
 
-  beforeEach(async () => {
-    // 全局方法存根
-    const $messages = {
-      info: jest.fn(),
-    };
-    wrapper = mount(ListsNew, {
-      store,
+  it('组件挂载时发出的 getSwitchList 请求参数正确', () => {
+    expect(anxiosGet.mock.calls[1][1].params).toEqual({ sort_by: 'in' });
+  });
+
+  it('方法 getThroughputTopNData 接收响应数据时预处理是否正确', () => {
+    expect(wrapper.vm.virtualSwitchThroughputTopn).toEqual(
+      data00.data.virtual_switch_throughput_topn,
+    );
+  });
+
+  it('方法 getSwitchList 接收响应数据时预处理是否正确', () => {
+    expect(wrapper.vm.virtualSwitchDataList).toEqual(
+      data10.data.virtual_switch_data_list,
+    );
+  });
+});
+
+describe('计算属性 switchTableData 的数据处理是否正确', () => {
+  it('普通情况下', async () => {
+    anxiosGet.mockResolvedValueOnce(data00).mockResolvedValueOnce(data10);
+    const wrapper = shallowMount(Switch, {
       localVue,
-      mocks: {
-        $messages,
+    });
+    await wrapper.vm.$nextTick();
+    expect(wrapper.vm.switchTableData).toEqual([
+      {
+        node_id: '123',
+        hostname: '321',
+        num_vnet: 'x5455xxx vnet',
+        packets: '入: 144 packets/s 出: 1343432 packets/s',
+        rate: '入:25 kbps 出: 63kbps',
+      },
+      {
+        hostname: '3421',
+        node_id: '12322',
+        num_vnet: 'x555455xxx vnet',
+        packets: '入: 44 packets/s 出: 13432 packets/s',
+        rate: '入:21 kbps 出: 43kbps',
+      },
+    ]);
+  });
+
+  it('数据为空的情况下', async () => {
+    anxiosGet.mockResolvedValueOnce(data00).mockResolvedValueOnce(data11);
+    const wrapper = shallowMount(Switch, {
+      localVue,
+    });
+    await wrapper.vm.$nextTick();
+    expect(wrapper.vm.switchTableData).toEqual([]);
+  });
+});
+
+describe('测试计算属性 topnChartData 的数据处理是否正确', () => {
+  it('普通情况下', async () => {
+    anxiosGet.mockResolvedValueOnce(data00).mockResolvedValueOnce(data10);
+    const wrapper = shallowMount(Switch, { localVue });
+    await wrapper.vm.$nextTick();
+    expect(wrapper.vm.topnChartData).toEqual({
+      inData: {
+        name: ['compute22', 'compute14', 'compute19'],
+        in: [3564, 644, 333],
+        out: [478, 47, 1444],
+      },
+      outData: {
+        name: ['compute23', 'compute12', 'compute29'],
+        in: [3564, 644, 3333],
+        out: [478, 47, 444],
       },
     });
-    // 定时器模拟
-    jest.useFakeTimers();
-    // 获取table,tr等dom
+  });
+
+  it('数据为空的情况下', async () => {
+    anxiosGet.mockResolvedValueOnce(data01).mockResolvedValueOnce(data10);
+    const wrapper = shallowMount(Switch, {
+      localVue,
+    });
     await wrapper.vm.$nextTick();
-    // 注意el组件嵌套问题
-    $table = wrapper.find('.table-wrapper .el-table__body-wrapper');
-    $tr = $table.findAll('tr');
+    expect(wrapper.vm.topnChartData).toEqual({
+      inData: {
+        name: [],
+        in: [],
+        out: [],
+      },
+      outData: {
+        name: [],
+        in: [],
+        out: [],
+      },
+    });
   });
+});
 
-  afterEach(() => {
-    // 删除任何挂起的计时器
-    jest.clearAllTimers();
-  });
-
-  // 测试接口数据是否处理正确
-  it('test listData', async () => {
-    // 请求函数执行
-    await wrapper.vm.fetchHardwareInfoAll();
-    const nodeIndex = wrapper.vm.nodeIndex;
-    const list = wrapper.vm.list;
-    // nodeIndex test
-    expect(nodeIndex).toEqual([0, 1, 2, 3]);
-    // list test
-    expect(list).toEqual(listData.data.hardware_info);
-  });
-
-  // 测试异步请求数据渲染是否正确
-  it('render table when created', async () => {
+describe('测试TopN单选框', () => {
+  let wrapper;
+  let $rencentRadio;
+  beforeAll(async () => {
+    anxiosGet.mockResolvedValueOnce(data00).mockResolvedValueOnce(data10);
+    wrapper = mount(Switch, {
+      localVue,
+    });
     await wrapper.vm.$nextTick();
-    // 表格行数是否渲染正确
-    expect($tr.length).toBe(listData.data.hardware_info.length);
-    // 名称是否渲染正确
-    const $tdName0 = $tr.at(0).findAll('td').at(2);
-    const $tdName1 = $tr.at(1).findAll('td').at(2);
-    // name字段有值时直接渲染当前内容
-    expect($tdName0.text()).toContain(listData.data.hardware_info[0].name[0]);
-    expect($tdName0.text()).toContain(listData.data.hardware_info[0].name[1]);
-    // name字段无值时显示未定义
-    expect($tdName1.text()).toContain('未定义');
+    $rencentRadio = wrapper.find('#recentRadio').findAll('.el-radio');
   });
 
-  // 测试定时器
-  it('Whether the timer is executed correctly', () => {
-    const spyFn = jest.spyOn(wrapper.vm, 'fetchHardwareInfoAll');
-    // 注意定时器需清零
-    wrapper.vm.refreshTimer = null;
-    wrapper.vm.startDataCollecting();
-    // 初始时请求函数调用1次
-    expect(spyFn).toHaveBeenCalledTimes(1);
-
-    // 注意定时器需清零
-    wrapper.vm.refreshTimer = null;
-    wrapper.vm.startDataCollecting();
-    // 时间快进
-    jest.advanceTimersByTime(10000);
-    expect(spyFn).toHaveBeenCalledTimes(2);
+  beforeEach(() => {
+    anxiosGet.mockClear();
   });
 
-  // 状态值渲染是否正确
-  it('state render', () => {
-    // state值为ok
-    expect(wrapper.vm.stateRender('ok')).toContain('正常');
-    // state值为down
-    expect(wrapper.vm.stateRender('down')).toContain('挂掉');
-    // state值为nodata
-    expect(wrapper.vm.stateRender('nodata')).toContain('无数据');
-    // state值为空或其他值
-    expect(wrapper.vm.stateRender('test')).toBeFalsy();
-    expect(wrapper.vm.stateRender('')).toBeFalsy();
+  test('默认选中1分钟按钮', async () => {
+    expect(wrapper.vm.recentRadio).toBe(1);
   });
-
-  // 测试编辑状态table联动情况
-  it('test table when it edit', async () => {
-    const $trFir = $tr.at(0);
-    // 获取第一行编辑按钮
-    const $editBtn = $trFir.findAll('.operate-btn').at(1);
-    // 编辑按钮触发点击
-    $editBtn.trigger('click');
-
-    // 注：触发了页面更新，需重新绘制，且重新获取dom
+  test('点击3分钟单选按钮', async () => {
+    anxiosGet.mockResolvedValueOnce(data00);
+    $rencentRadio.at(1).trigger('click');
     await wrapper.vm.$nextTick();
-    const $table1 = wrapper.find('.table-wrapper .el-table__body-wrapper');
-    const $trFir1 = $table1.findAll('tr').at(0);
-    // 当前行是否处于可编辑状态，输入框3个
-    const $input = $trFir1.findAll('input[type="text"]');
-    expect($input.length).toBe(3);
-    // 当前行上移按钮是否处于不可编辑状态
-    const $upBtn = $trFir1.find('.el-button');
-    expect($upBtn.attributes('disabled')).toBeTruthy();
-    // 当前行是否选中
-    expect(wrapper.vm.selectedNode.length).toBe(1);
-    expect(wrapper.vm.selectedNode[0]).toEqual(listData.data.hardware_info[0]);
+    expect(wrapper.vm.recentRadio).toBe(3);
+    expect(anxiosGet.mock.calls[0][1].params).toEqual({
+      last_minutes: 3,
+      n: 5,
+    });
+  });
+  test('点击10分钟单选按钮', async () => {
+    anxiosGet.mockResolvedValueOnce(data00);
+    $rencentRadio.at(2).trigger('click');
+    await wrapper.vm.$nextTick();
+    expect(wrapper.vm.recentRadio).toBe(10);
+    expect(anxiosGet.mock.calls[0][1].params).toEqual({
+      last_minutes: 10,
+      n: 5,
+    });
+  });
+  test('点击1分钟单选按钮', async () => {
+    anxiosGet.mockResolvedValueOnce(data00);
+    $rencentRadio.at(0).trigger('click');
+    await wrapper.vm.$nextTick();
+    expect(wrapper.vm.recentRadio).toBe(1);
+    expect(anxiosGet.mock.calls[0][1].params).toEqual({
+      last_minutes: 1,
+      n: 5,
+    });
+  });
+  test('再次点击1分钟单选按钮，无反应', async () => {
+    $rencentRadio.at(0).trigger('click');
+    expect(wrapper.vm.recentRadio).toBe(1);
+    expect(anxiosGet.mock.calls).toEqual([]);
+  });
+});
+
+describe('测试入向出向单选按钮', () => {
+  let wrapper;
+  let $sortByRadio;
+  beforeAll(async () => {
+    anxiosGet.mockResolvedValueOnce(data00).mockResolvedValueOnce(data10);
+    wrapper = mount(Switch, {
+      localVue,
+    });
+    await wrapper.vm.$nextTick();
+    $sortByRadio = wrapper.find('#sortByRadio').findAll('.el-radio');
   });
 
-  // 测试编辑状态头部信息联动情况
-  it('test confirm-group when it edit', async () => {
-    const $trFir = $tr.at(0);
-    // 获取第一行编辑按钮
-    const $editBtn = $trFir.findAll('.operate-btn').at(1);
-    // 编辑按钮触发点击
-    $editBtn.trigger('click');
-
-    // 注：触发了页面更新，需重新绘制
-    await wrapper.vm.$nextTick();
-    const $confirmGroup = wrapper.find('.confirm-group');
-    const $dec = $confirmGroup.findAll('.dec');
-
-    // 主机排列次序不显示
-    expect($dec.at(0).html()).toContain('调整主机排列次序');
-    expect($dec.at(0).attributes('style')).toContain('display: none;');
-
-    // 主机描述定义显示
-    expect($dec.at(1).html()).toContain('修改主机描述定义');
-    expect($dec.at(1).attributes('style')).toBeFalsy();
+  beforeEach(() => {
+    anxiosGet.mockClear();
   });
 
-  // 测试第一行单个上移情况
-  it('test single up for first line', () => {
-    const $trFir = $tr.at(0);
-    // 获取第一行上移按钮
-    const $upBtn = $trFir.findAll('.operate-btn').at(0);
-    // 点击上移
-    $upBtn.trigger('click');
-    // 第一个上移 期望不进行上移计算
-    expect(wrapper.vm.list[0]).toEqual(listData.data.hardware_info[0]);
-    // 直接返回message
-    expect(wrapper.vm.$messages.info).toBeCalledTimes(1);
+  test('默认选中入向单选按钮', () => {
+    expect(wrapper.vm.sortBy).toBe('in');
   });
 
-  // 测试第三行单个上移情况
-  it('test single up for third line', async () => {
-    const $trThr = $tr.at(2);
-    // 获取第三行上移按钮
-    const $upBtn = $trThr.findAll('.operate-btn').at(0);
-    // 点击上移
-    $upBtn.trigger('click');
-    // 期望已经上移至第二行
-    expect(wrapper.vm.list[1]).toEqual(listData.data.hardware_info[2]);
-
+  test('点击出向单选按钮', async () => {
+    anxiosGet.mockResolvedValueOnce(data10);
+    $sortByRadio.at(1).trigger('click');
     await wrapper.vm.$nextTick();
-    // 重新获取,此时已在第二行
-    const $trSec = $tr.at(1);
-    const $upBtn1 = $trSec.findAll('.operate-btn').at(0);
-    // 再次点击
-    $upBtn1.trigger('click');
-    // 期望已经上移至第一行
-    expect(wrapper.vm.list[0]).toEqual(listData.data.hardware_info[2]);
+    expect(wrapper.vm.sortBy).toBe('out');
+    expect(anxiosGet.mock.calls[0][1].params).toEqual({ sort_by: 'out' });
   });
 
-  // 测试批量上移按钮显示情况
-  it('test multiple up button is show or hide', async () => {
-    // 模拟选择
-    const hardwareInfo = listData.data.hardware_info;
-    const selection = [hardwareInfo[1]];
-    wrapper.vm.handleSelectionChange(selection);
-
+  test('点击入向单选按钮', async () => {
+    anxiosGet.mockResolvedValueOnce(data10);
+    $sortByRadio.at(0).trigger('click');
     await wrapper.vm.$nextTick();
-    const $mulBtn = wrapper.find('.confirm-group > button');
-    // 选中1个时，期望批量上移按钮不可点击
-    expect($mulBtn.attributes('disabled')).toBeTruthy();
-
-    // 选中2个
-    const selection1 = [hardwareInfo[1], hardwareInfo[2]];
-    wrapper.vm.handleSelectionChange(selection1);
-
-    await wrapper.vm.$nextTick();
-    const $mulBtn1 = wrapper.find('.confirm-group > button');
-    // 选中2个时，期望批量上移按钮可用
-    expect($mulBtn1.attributes('disabled')).toBeUndefined();
+    expect(wrapper.vm.sortBy).toBe('in');
+    expect(anxiosGet.mock.calls[0][1].params).toEqual({ sort_by: 'in' });
   });
 
-  // 测试批量上移移动情况
-  it('test multiple up is correct', async () => {
-    // 模拟选择，选择第2个和第4个
-    const hardwareInfo = listData.data.hardware_info;
-    const selection = [hardwareInfo[1], hardwareInfo[3]];
-    wrapper.vm.handleSelectionChange(selection);
-
-    // 页面渲染
-    await wrapper.vm.$nextTick();
-    const $mulBtn = wrapper.find('.confirm-group > button');
-    // 批量按钮点击
-    $mulBtn.trigger('click');
-
-    // 期望第2已经上移至第1
-    expect(wrapper.vm.list[0]).toEqual(hardwareInfo[1]);
-    // 第4已上移至第3
-    expect(wrapper.vm.list[2]).toEqual(hardwareInfo[3]);
-
-    // 批量按钮再次点击
-    $mulBtn.trigger('click');
-    // 已经移到第一了，直接返回message
-    expect(wrapper.vm.$messages.info).toBeCalledTimes(1);
+  test('再次点击入向单选按钮，无反应', async () => {
+    $sortByRadio.at(0).trigger('click');
+    expect(wrapper.vm.sortBy).toBe('in');
+    expect(anxiosGet.mock.calls).toEqual([]);
   });
 });
 ```
 
-
-
 ## 如何debug
+
+`cnpm install --save-dev babel-jest @babel/core @babel/preset-env babel-plugin-transform-es2015-modules-commonjs`
+建议最好将`node_modules`文件夹删除，重新`npm install`
 
 ```js
 // babel.config.js
+
+//module.exports = {
+//  presets: ['@vue/app'],
+//};
+
 module.exports = {
   presets: [
-      [
-          "@babel/preset-env",
-          {
-              targets: {
-                  node: "current"
-              }
-          }
-      ]
+    [
+      '@babel/preset-env',
+      {
+        targets: {
+          node: 'current',
+        },
+      },
+    ],
   ],
-  plugins: ["transform-es2015-modules-commonjs"]
+  plugins: ['transform-es2015-modules-commonjs'],
 };
-
-
 ```
 
 ```js
 //.vscode/launch.json
 {
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Debug Jest Tests",
+      "name": "Jest Debug AllFile",
       "type": "node",
       "request": "launch",
+      "protocol": "inspector",
+      "program": "${workspaceRoot}/node_modules/jest/bin/jest",
+      "stopOnEntry": false,
+      "args": ["--runInBand", "--env=jsdom"],
       "runtimeArgs": [
-        "--inspect-brk",
-        "${workspaceRoot}/node_modules/jest/bin/jest.js",
-        "--runInBand"
+          "--inspect-brk"
       ],
-      "console": "integratedTerminal",
-      "internalConsoleOptions": "neverOpen",
-      "port": 9229
-    }
+      "cwd": "${workspaceRoot}",
+      "sourceMaps": true,
+      "console": "integratedTerminal"
+  },
+  {
+      "name": "Jest Debug File",
+      "type": "node",
+      "request": "launch",
+      "protocol": "inspector",
+      "program": "${workspaceRoot}/node_modules/jest/bin/jest",
+      "stopOnEntry": false,
+      "args": ["--runInBand", "--env=jsdom", "${fileBasename}"],
+      "runtimeArgs": [
+          "--inspect-brk"
+      ],
+      "cwd": "${workspaceRoot}",
+      "sourceMaps": true,
+      "console": "integratedTerminal"
+  },
   ]
 }
 ```
-
-`cnpm install --save-dev babel-jest @babel/core @babel/preset-env babel-plugin-transform-es2015-modules-commonjs`
-
