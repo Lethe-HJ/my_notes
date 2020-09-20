@@ -1065,9 +1065,17 @@ describe('测试入向出向单选按钮', () => {
 
 ## 如何debug
 
+<<<<<<< HEAD
 `cnpm install --save-dev babel-jest @babel/core @babel/preset-env babel-plugin-transform-es2015-modules-commonjs`
 建议最好将`node_modules`文件夹删除，重新`npm install`
 
+=======
+<<<<<<< HEAD
+`cnpm install --save-dev babel-jest @babel/core @babel/preset-env babel-plugin-transform-es2015-modules-commonjs`
+
+=======
+>>>>>>> c9e449741401e70f8664d2e13a5b94d1f3cde344
+>>>>>>> 5e11af4979de457a2de284719e3977d5bf13635f
 ```js
 // babel.config.js
 
@@ -1131,3 +1139,80 @@ module.exports = {
   ]
 }
 ```
+
+
+```js
+{
+  "name": "koui-new",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "serve": "vue-cli-service serve",
+    "build": "vue-cli-service build",
+    "test:unit": "vue-cli-service test:unit",
+    "test:e2e": "vue-cli-service test:e2e",
+    "lint": "vue-cli-service lint",
+    "debugger": "./node_modules/.bin/babel-node --inspect-brk ./node_modules/jest/bin/jest.js --runInBand"
+  },
+  "dependencies": {
+    "animated-number-vue": "^0.1.5",
+    "axios": "0.18.0",
+    "babel-runtime": "^6.26.0",
+    "echarts": "^4.2.0-rc.2",
+    "element-ui": "^2.4.11",
+    "font-awesome": "4.7.0",
+    "lodash": "^4.17.19",
+    "normalize.css": "7.0.0",
+    "path-to-regexp": "2.4.0",
+    "promise.prototype.finally": "^3.1.2",
+    "qrcode.vue": "^1.7.0",
+    "vue": "~2.6.11",
+    "vue-cookies": "^1.5.13",
+    "vue-router": "~3.3.4",
+    "vuex": "~3.4.0"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.0.0-beta.40",
+    "@babel/core": "^7.11.5",
+    "@babel/plugin-transform-runtime": "^7.5.5",
+    "@babel/preset-env": "^7.11.5",
+    "@vue/cli-plugin-babel": "^3.2.0",
+    "@vue/cli-plugin-eslint": "^4.4.1",
+    "@vue/cli-plugin-unit-jest": "^4.4.6",
+    "@vue/cli-service": "^3.2.0",
+    "@vue/eslint-config-airbnb": "^5.0.2",
+    "@vue/eslint-config-prettier": "^6.0.0",
+    "@vue/test-utils": "^1.0.3",
+    "babel-jest": "^26.3.0",
+    "babel-plugin-transform-es2015-modules-commonjs": "^6.26.2",
+    "eslint": "^6.7.2",
+    "eslint-plugin-prettier": "^3.1.3",
+    "eslint-plugin-vue": "^6.2.2",
+    "husky": "^4.2.5",
+    "jest-html-reporter": "^3.1.3",
+    "lint-staged": "^10.2.8",
+    "mockjs": "^1.1.0",
+    "prettier": "^2.0.5",
+    "sass": "^1.26.8",
+    "sass-loader": "^7.1.0",
+    "vue-eslint-parser": "^7.1.0",
+    "vue-template-compiler": "^2.5.17"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  },
+  "lint-staged": {
+    "src/**/*{.js,.vue}": [
+      "npm run lint"
+    ],
+    "src/**/*{.css,.scss}": [
+      "prettier --write"
+    ]
+  }
+}
+
+```
+`cnpm install --save-dev babel-jest @babel/core @babel/preset-env babel-plugin-transform-es2015-modules-commonjs`
+>>>>>>> 5e11af4979de457a2de284719e3977d5bf13635f
