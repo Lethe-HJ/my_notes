@@ -1,0 +1,1 @@
+`npm install @dcloudio/uni-ui`
