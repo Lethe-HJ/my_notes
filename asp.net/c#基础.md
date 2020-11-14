@@ -96,6 +96,220 @@ public static void SwapExample()
 }
 ```
 
+输出参数与引用参数类似，不同之处在于，不要求向调用方提供的自变量显式赋值
+
+```C#
+static void Divide(int x, int y, out int result, out int remainder)
+{
+    result = x / y;
+    remainder = x % y;
+}
+
+public static void OutUsage()
+{
+    Divide(10, 3, out int res, out int rem);
+    Console.WriteLine($"{res} {rem}"); // "3 1"
+}
+```
+
+参数数组允许向方法传递数量不定的自变量。 参数数组使用 params 修饰符进行声明。
+参数数组只能是方法的最后一个参数，且参数数组的类型必须是一维数组类型
+
+### 抽象方法
+
+```c#
+public class Console
+{
+    public static void Write(string fmt, params object[] args) { }
+    public static void WriteLine(string fmt, params object[] args) { }
+    // ...
+}
+```
+
+```C#
+public abstract class Expression
+{
+    public abstract double Evaluate(Dictionary<string, object> vars);
+}
+
+public class Constant : Expression
+{
+    double _value;
+
+    public Constant(double value)
+    {
+        _value = value;
+    }
+
+    public override double Evaluate(Dictionary<string, object> vars)
+    {
+        return _value;
+    }
+}
+
+public class VariableReference : Expression
+{
+    string _name;
+
+    public VariableReference(string name)
+    {
+        _name = name;
+    }
+
+    public override double Evaluate(Dictionary<string, object> vars)
+    {
+        object value = vars[_name] ?? throw new Exception($"Unknown variable: {_name}");
+        return Convert.ToDouble(value);
+    }
+}
+
+public class Operation : Expression
+{
+    Expression _left;
+    char _op;
+    Expression _right;
+
+    public Operation(Expression left, char op, Expression right)
+    {
+        _left = left;
+        _op = op;
+        _right = right;
+    }
+
+    public override double Evaluate(Dictionary<string, object> vars)
+    {
+        double x = _left.Evaluate(vars);
+        double y = _right.Evaluate(vars);
+        switch (_op)
+        {
+            case '+': return x + y;
+            case '-': return x - y;
+            case '*': return x * y;
+            case '/': return x / y;
+
+            default: throw new Exception("Unknown operator");
+        }
+    }
+}
+```
+
+### 方法重载
+
+```C#
+class OverloadingExample
+{
+    static void F() => Console.WriteLine("F()");
+    static void F(object x) => Console.WriteLine("F(object)");
+    static void F(int x) => Console.WriteLine("F(int)");
+    static void F(double x) => Console.WriteLine("F(double)");
+    static void F<T>(T x) => Console.WriteLine("F<T>(T)");
+    static void F(double x, double y) => Console.WriteLine("F(double, double)");
+    public static void UsageExample()
+    {
+        F();            // Invokes F()
+        F(1);           // Invokes F(int)
+        F(1.0);         // Invokes F(double)
+        F("abc");       // Invokes F<string>(string)
+        F((double)1);   // Invokes F(double)
+        F((object)1);   // Invokes F(object)
+        F<int>(1);      // Invokes F<int>(int)
+        F(1, 1);        // Invokes F(double, double)
+    }
+}
+```
+
+### 属性
+
+```C#
+public class MyList<T>
+{
+    const int DefaultCapacity = 4;
+
+    T[] _items;
+    int _count;
+
+    public MyList(int capacity = DefaultCapacity)
+    {
+        _items = new T[capacity];
+    }
+
+    public int Count => _count;
+
+    // 属性get set
+    public int Capacity
+    {
+        get =>  _items.Length;
+        set
+        {
+            if (value < _count) value = _count;
+            if (value != _items.Length)
+            {
+                T[] newItems = new T[value];
+                Array.Copy(_items, 0, newItems, 0, _count);
+                _items = newItems;
+            }
+        }
+    }
+
+    public T this[int index]
+    {
+        get => _items[index];
+        set
+        {
+            _items[index] = value;
+            OnChanged();
+        }
+    }
+
+    public void Add(T item)
+    {
+        if (_count == Capacity) Capacity = _count * 2;
+        _items[_count] = item;
+        _count++;
+        OnChanged();
+    }
+    protected virtual void OnChanged() =>
+        Changed?.Invoke(this, EventArgs.Empty);
+
+    public override bool Equals(object other) =>
+        Equals(this, other as MyList<T>);
+
+    static bool Equals(MyList<T> a, MyList<T> b)
+    {
+        if (Object.ReferenceEquals(a, null)) return Object.ReferenceEquals(b, null);
+        if (Object.ReferenceEquals(b, null) || a._count != b._count)
+            return false;
+        for (int i = 0; i < a._count; i++)
+        {
+            if (!object.Equals(a._items[i], b._items[i]))
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public event EventHandler Changed;
+
+    public static bool operator ==(MyList<T> a, MyList<T> b) =>
+        Equals(a, b);
+
+    public static bool operator !=(MyList<T> a, MyList<T> b) =>
+        !Equals(a, b);
+}
+```
+
+### 构造函数
+
+C# 支持实例和静态构造函数。 实例构造函数是实现初始化类实例所需执行的操作的成员。 静态构造函数是实现在首次加载类时初始化类本身所需执行的操作的成员。
+构造函数的声明方式与方法一样，都没有返回类型，且与所含类同名。 如果构造函数声明包含 static 修饰符，则声明的是静态构造函数。 否则，声明的是实例构造函数。
+
+### 虚方法
+
+如果实例方法声明中有 virtual 修饰符，可以将实例方法称为“虚方法”。 如果没有 virtual 修饰符，可以将实例方法称为“非虚方法”。
+调用虚方法时，为其调用方法的实例的运行时类型决定了要调用的实际方法实现代码。 调用非虚方法时，实例的编译时类型是决定性因素。
+可以在派生类中重写虚方法。 如果实例方法声明中有 override 修饰符，那么实例方法可以重写签名相同的继承虚方法。 虚方法声明引入了新方法。 重写方法声明通过提供现有继承的虚方法的新实现，专门针对该方法。
+
 ### 基类
 
 ```C#
