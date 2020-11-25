@@ -124,6 +124,9 @@ HEAD指向的版本就是版本库里的当前版本
 `git branch -d dev`删除dev分支
 `git branch -D dev`如果分支没有合并，无法删除，那就强行删除
 
+`git branch -vv`（两个v），就能够看到本地分支跟踪的远程分支。
+`git remote -vv`  查看本地仓库关联的远程仓库
+
 ## 解决冲突
 
 `git status`可以查看冲突的文件

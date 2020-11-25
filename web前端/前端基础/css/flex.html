@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    test1
+    <div class="test1">
+        <div>1</div>
+        <div>2</div>
+        <div>3</div>
+    </div>
+    test2
+    <div class="test2">
+        <div>1</div>
+        <div>2</div>
+        <div>3</div>
+    </div>
+    test3
+    <div class="test3">
+        <div>1</div>
+        <div>2</div>
+        <div>3</div>
+    </div>
+    test4
+    <div class="test4">
+        <div>1</div>
+        <div>2</div>
+        <div>3</div>
+    </div>
+    test5
+    <div class="test5">
+        <div>1</div>
+        <div>2</div>
+        <div>3</div>
+        <div>4</div>
+    </div>
+    test6
+    <div class="test6">
+        <div>1</div>
+        <div>2</div>
+        <div>3</div>
+        <div>4</div>
+    </div>
+    test7
+    <div class="test7">
+        <div>1</div>
+        <div>2</div>
+        <div>3</div>
+        <div>4</div>
+        <div>5</div>
+        <div>6</div>
+        <div>7</div>
+    </div>
+    test8
+    <div class="test8">
+        <div>1</div>
+        <div>2</div>
+        <div>3</div>
+        <div>4</div>
+    </div>
+
+    test9
+    <div class="test9">
+        <div>1</div>
+        <div>2</div>
+        <div>3</div>
+        <div>4</div>
+    </div>
+
+    test10
+    <div class="test10">
+        <div>1</div>
+        <div>2</div>
+        <div>3</div>
+        <div>4</div>
+    </div>
+
+    test11
+    <div class="test11">
+        <div>1</div>
+        <div>2</div>
+        <div>3</div>
+        <div>4</div>
+    </div>
+
+    test12
+    <div class="test12">
+        <div>1</div>
+        <div>2</div>
+        <div>3</div>
+        <div>4</div>
+    </div>
+</body>
+<style>
+    body > div {
+        border: 1px solid blue;
+        padding: 2px;
+    }
+    div > div {
+        border: 1px solid red;
+        width: 200px;
+        height: 50px;
+    }
+    .test1 {
+        /* 从左往右排列  默认  */
+        display: flex;
+    }
+    .test2 {
+        display: flex;
+        flex-direction: column-reverse;
+        /* 
+        row
+        从左往右排列  默认
+        row-reverse
+        从右往左排列 会挤到最右边
+        column
+        从上往下排列
+        column-reverse
+        从下往上排列  会挤到最上边
+        */
+    }
+    .test3 {
+        display: flex;
+        /*  如果一行装不下那么就平分 
+            nowrap;
+            如果一行装不下那么就换行
+            wrap;
+            如果一行装不下那么换行，第一行在下方 */
+        flex-wrap: wrap-reverse;
+    }
+    .test3 > div {
+        width: 40%;
+    }
+
+    /* flex-flow属性是flex-direction属性和flex-wrap属性的简写形式，默认值为row nowrap */
+    .test4 {
+        display: flex;
+        /* flex-flow: <flex-direction> || <flex-wrap>; */
+        flex-flow: row-reverse wrap;
+    }
+    .test4 > div {
+        width: 40%;
+    }
+
+    .test5 {
+        display: flex;
+        justify-content: space-around;
+        /* 
+        flex-start（默认值）：左对齐
+        flex-end：右对齐
+        center： 居中
+        space-between：两端对齐，项目之间的间隔都相等。
+        space-around：每个项目两侧的间隔相等。所以，项目之间的间隔比项目与边框的间隔大一倍。
+         */
+    }
+    .test6 {
+        display: flex;
+        align-items: stretch;
+        /* 
+        flex-start：交叉轴的起点对齐。
+        flex-end：交叉轴的终点对齐。
+        center：交叉轴的中点对齐。
+        baseline: 项目的第一行文字的基线对齐。
+        stretch（默认值）：如果项目未设置高度或设为auto/unset，将占满整个容器的高度。
+         */
+    }
+    .test6 > div {
+        /* line-height: 50px; */
+        height: auto;
+    }
+    .test6 > div:first-child,
+    .test6 > div:last-child {
+        /* line-height: 70px; */
+        height: 70px;
+    }
+
+    .test7 {
+        height: 200px;
+        display: flex;
+        flex-wrap: wrap;
+        align-content:  center;
+        /* 
+        align-content属性定义了多根轴线的对齐方式。如果项目只有一根轴线，该属性不起作用。
+        flex-start：与交叉轴的起点对齐。
+        flex-end：与交叉轴的终点对齐。
+        center：与交叉轴的中点对齐。
+        space-between：与交叉轴两端对齐，轴线之间的间隔平均分布。
+        space-around：每根轴线两侧的间隔都相等。所以，轴线之间的间隔比轴线与边框的间隔大一倍。
+        stretch（默认值）：轴线占满整个交叉轴。
+        */
+    }
+    .test8 {
+        display: flex;
+    }
+    .test8 > div:last-child {
+        /* order属性定义项目的排列顺序。数值越小，排列越靠前，默认为0。 */
+        order: -1;
+    }
+    .test8 > div:first-child {
+        order: 99;
+    }
+    .test9 {
+        display: flex;
+    }
+    .test9 > div:first-child {
+        /* 
+        flex-grow属性定义项目的放大比例，默认为0，即如果存在剩余空间，也不放大。
+        如果所有项目的flex-grow属性都为1，则它们将等分剩余空间（如果有的话）。
+        如果一个项目的flex-grow属性为2，其他项目都为1，则前者占据的剩余空间将比其他项多一倍。
+         */
+        flex-grow: 1;
+    }
+    .test9 > div:last-child {
+        flex-grow: 2;
+    }
+
+    .test10 {
+        display: flex;
+    }
+
+    .test10 > div {
+        width: 600px;
+    }
+
+    .test10 > div:first-child {
+        /*
+        flex-shrink属性定义了项目的缩小比例，默认为1，即如果空间不足，该项目将缩小。 
+        如果所有项目的flex-shrink属性都为1，当空间不足时，都将等比例缩小。如果一个项目
+        的flex-shrink属性为0，其他项目都为1，则空间不足时，前者不缩小。负值对该属性无效
+         */
+        flex-shrink: 0;
+    }
+
+    .test11 {
+        display: flex;
+    }
+
+    .test11 > div {
+        width: 200px;
+    }
+    .test11 > div:first-child {
+        /*
+        flex-basis属性定义了在分配多余空间之前，项目占据的主轴空间（main size）。
+        浏览器根据这个属性，计算主轴是否有多余空间。它的默认值为auto，即项目的本来大小。
+        它可以设为跟width或height属性一样的值（比如350px），则项目将占据固定空间。
+         */
+        flex-basis: 300px;
+    }
+
+    .test12 {
+        display: flex;
+    }
+    .test12 > div:first-child {
+        width: 400px;
+        height: 70px;
+        flex: 1 0;
+    }
+</style>
+</html>
