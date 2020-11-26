@@ -1071,11 +1071,15 @@ describe('测试入向出向单选按钮', () => {
 
 =======
 <<<<<<< HEAD
+>>>>>>> c9e449741401e70f8664d2e13a5b94d1f3cde344
+=======
+<<<<<<< HEAD
 `cnpm install --save-dev babel-jest @babel/core @babel/preset-env babel-plugin-transform-es2015-modules-commonjs`
 
 =======
 >>>>>>> c9e449741401e70f8664d2e13a5b94d1f3cde344
 >>>>>>> 5e11af4979de457a2de284719e3977d5bf13635f
+>>>>>>> c2dcd39858e20b55e04a6b49eea0a8532defdf46
 ```js
 // babel.config.js
 
@@ -1214,5 +1218,9 @@ module.exports = {
 }
 
 ```
+<<<<<<< HEAD
+`cnpm install --save-dev babel-jest @babel/core @babel/preset-env babel-plugin-transform-es2015-modules-commonjs`
+=======
 `cnpm install --save-dev babel-jest @babel/core @babel/preset-env babel-plugin-transform-es2015-modules-commonjs`
 >>>>>>> 5e11af4979de457a2de284719e3977d5bf13635f
+>>>>>>> c2dcd39858e20b55e04a6b49eea0a8532defdf46
