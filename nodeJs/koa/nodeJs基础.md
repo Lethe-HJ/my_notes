@@ -1,26 +1,32 @@
+# nodeJs基础
+
+## 什么是nodeJs
+
 node.js是一个异步的事件驱动的JavaScript运行时
 运行时rumtime就是程序运行的时候
 运行时库就是程序运行的时候所需要依赖的库
 
-与前端的异同
-JS核心语法不变前端
-BOM DOM后端
-内建模块fs http buffer event os
+## 与前端的异同
+
+JS核心语法不变
+前端 浏览器环境 BOM DOM
+后端 nodeJs环境 fs http buffer event os
 
 每次修改js文件需重新执行才能生效，安装nodemon可以监视文件改动，自动重启
-npm i-g nodemon
+
+`npm i-g nodemon`
 
 ```js
 //内建模块直接引入
-constos=require('os')
-constmem=os.freemem()/os.totalmem()*100
+const os=require('os')
+const mem=os.freemem()/os.totalmem()*100
 console.log(`内存占用率${mem.toFixed(2)}%`)
 ```
 
 ```js
-constdownload=require('download-git-repo')
-constora=require('ora')
-constprocess=ora(`下载.....项目`)process.start()
+const download=require('download-git-repo')
+const ora=require('ora')
+const process=ora(`下载.....项目`)process.start()
 download('github:su37josephxia/vue-template','test',err=>{
   if(err){
     process.fail()
@@ -31,6 +37,8 @@ download('github:su37josephxia/vue-template','test',err=>{
 ```
 
 ### promisefy
+
+`npm i download-git-repo -s`
 
 让异步任务串行化
 
@@ -45,7 +53,7 @@ async function clone(repo,desc) {
   const process = ora(`下载项目......`);
   process.start();
   try {
-      await download(repo, desc);
+    await download(repo, desc);
   } catch (error) {
     process.fail()
   }
@@ -53,7 +61,7 @@ async function clone(repo,desc) {
 }
 ```
 
-###　自定义模块
+### 自定义模块
 
 ```js
 module.exports.clone = async function clone(repo, desc) {
@@ -74,9 +82,9 @@ const {clone} = require('./download')
 clone()
 ```
 
-##　核心API
+## 核心API
 
-###　fs 文件系统
+### fs 文件系统
 
 ```js
 const fs = require('fs');
@@ -88,7 +96,7 @@ console.log(data);
 // 异步调用
 fs.readFile('./conf.js', (err, data) => {
 if (err) throw err;
-	console.log(data);
+  console.log(data);
 });
 console.log('其他操作');
 
@@ -122,7 +130,7 @@ fsp
 })()
 ```
 
-###　buffer
+### buffer
 
 Buffer - 用于在 TCP 流、文件系统操作、以及其他上下文中与八位字节流进行交互。 八位字
 节组成的数组,可以有效的在JS中存储二进制数据
@@ -164,7 +172,7 @@ console.log(buf4.toString());
 const http = require('http');
 const server = http.createServer((request, response) => {
 console.log('there is a request');
-	response.end('a response from server');
+  response.end('a response from server');
 });
 server.listen(3000);
 ```
@@ -210,4 +218,126 @@ const {url, method, headers} = request;
 else if (method === 'GET' && headers.accept.indexOf('image/*') !== -1) {
 fs.createReadStream('.'+url).pipe(response);
 }
+```
+
+Accept代表发送端(客户端)希望接受的数据类型。 比如:Accept:text/xml; 代表客户端希望
+接受的数据类型是xml类型。
+Content-Type代表发送端(客户端|服务器)发送的实体数据的数据类型。 比如:Content-
+Type:text/html; 代表发送端发送的数据格式是html。
+二者合起来, Accept:text/xml; Content-Type:text/html ,即代表希望接受的数据类型是xml格
+式,本次请求发送的数据的数据格式是html。
+
+`mkdir vue-auto-router-cli`
+`cd vue-auto-router-cli`
+`npm init -y`
+
+bin/kkb
+
+```js
+console.log('cli.....')
+```
+
+package.json
+
+```json
+"bin": {
+"kkb": "./bin/kkb"
+},
+```
+
+`npm link`
+
+删除时需要把源文件与链接都删除
+`ls /usr/local/bin/`
+`rm /usr/local/bin/kkb`
+
+kkb
+
+```js
+#!/usr/bin/env node
+const program = require('commander')
+program.version(require('../package').version, '-v', '--version')
+.command('init <name>', 'init project')
+.command('refresh','refresh routers...')
+program.parse(process.argv)
+```
+
+kkb-init
+
+```js
+#!/usr/bin/env node
+const program = require('commander')
+program
+.action(name => {
+console.log('init ' + name)
+})
+program.parse(process.argv)
+```
+
+/lib/download.js
+
+```js
+const {promisify} = require('util')
+module.exports.clone = async function(repo,desc) {
+const download = promisify(require('download-git-repo'))
+const ora = require('ora')
+const process = ora(`下载.....${repo}`)
+process.start()
+await download(repo, desc)
+process.succeed()
+}
+```
+
+kkb-init
+
+```js
+const {clone} = require('../lib/download')
+console.log('🚀创建项目: ' + name)
+await clone('github:su37josephxia/vue-template',name)
+```
+
+kkb-refresh
+
+```js
+#!/usr/bin/env node
+const program = require('commander')
+const symbols = require('log-symbols')
+const chalk = require('chalk')
+// console.log(process.argv)
+program
+  .action(() => {
+    console.log('refresh .... ')
+})
+program.parse(process.argv)
+const fs = require('fs')
+const handlebars = require('handlebars')
+const list = fs.readdirSync('./src/views')
+  .filter(v => v !== 'Home.vue')
+  .map(v => ({
+    name: v.replace('.vue', '').toLowerCase(),
+    file: v
+  }))
+compile({list}, './src/router.js', './template/router.js.hbs')
+compile({list}, './src/App.vue', './template/App.vue.hbs')
+function compile(meta, filePath, templatePath) {
+  if (fs.existsSync(templatePath)) {
+    const content = fs.readFileSync(templatePath).toString();
+    const result = handlebars.compile(content)(meta);
+    fs.writeFileSync(filePath, result);
+  }
+  console.log(symbols.success, chalk.green(`🚀${filePath} 创建成功`))
+}
+```
+
+```bash
+#!/usr/bin/env bash
+npm config get registry # 检查仓库镜像库
+npm config set registry=http://registry.npmjs.org
+echo '请进行登录相关操作:'
+npm login # 登陆
+echo "-------publishing-------"
+npm publish # 发布
+npm config set registry=https://registry.npm.taobao.org # 设置为淘宝镜像
+echo "发布完成"
+exit
 ```
